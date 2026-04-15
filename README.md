@@ -5,9 +5,7 @@
 
 🔴 **Live Demo** → [gunehee.github.io/BI_energy-sustainability](https://gunehee.github.io/BI_energy-sustainability/)  
 📋 **Interview Deep Q&A** → [gunehee.github.io/BI_energy-sustainability/interview_deep_qa.html](https://gunehee.github.io/BI_energy-sustainability/interview_deep_qa.html)  
-👤 **Author** → [GunHee Lee](https://github.com/Gunehee) · Geography Data Science, University of Washington
-
----
+👤 **Author** → [GunHee Lee](https://github.com/Gunehee)
 
 ## Project Summary
 
