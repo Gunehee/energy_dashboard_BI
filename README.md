@@ -4,7 +4,6 @@
 > **An end-to-end BI project** — KPI design → real data collection → pipeline engineering → interactive dashboard.
 
 🔴 **Live Demo** → [gunehee.github.io/BI_energy-sustainability](https://gunehee.github.io/BI_energy-sustainability/)  
-🔴 **Dashboard** → (index.html)
 👤 **Author** → [GunHee Lee](https://github.com/Gunehee)
 
 ## Project Summary
