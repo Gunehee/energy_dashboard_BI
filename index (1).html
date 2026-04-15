@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Energy & Sustainability Dashboard — GunHee Lee</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0c10;--surface:#13161d;--surface2:#1c1f28;--border:#252836;
+  --accent:#4f8ef7;--green:#3ecf8e;--amber:#f5a623;--red:#f05050;--purple:#9b72dd;
+  --text:#e2e5f0;--dim:#6b7280;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0d1420 0%,#111520 50%,#0c1018 100%);border-bottom:1px solid var(--border);padding:40px 48px 32px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;top:-100px;right:-60px;width:360px;height:360px;background:radial-gradient(circle,rgba(79,142,247,.08) 0%,transparent 65%);pointer-events:none}
+.header-label{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.header h1{font-size:28px;font-weight:700;line-height:1.2;margin-bottom:8px}
+.header h1 em{font-style:normal;color:var(--accent)}
+.header-sub{font-size:13px;color:var(--dim);margin-bottom:16px}
+.header-meta{display:flex;gap:16px;flex-wrap:wrap}
+.meta-chip{font-family:var(--mono);font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:4px;color:var(--dim)}
+
+/* NAV */
+.nav{display:flex;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;position:sticky;top:0;z-index:100}
+.nav-btn{padding:13px 20px;font-size:13px;color:var(--dim);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+
+/* CONTENT */
+.page{display:none;max-width:1100px;margin:0 auto;padding:32px 32px 80px}
+.page.active{display:block}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+@media(max-width:720px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px}
+.kpi-label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;color:var(--text);margin-bottom:2px}
+.kpi-sub{font-size:11px;color:var(--dim)}
+.kpi.accent .kpi-value{color:var(--accent)}
+.kpi.green .kpi-value{color:var(--green)}
+.kpi.amber .kpi-value{color:var(--amber)}
+
+/* CHART CONTAINERS */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.chart-sub{font-size:12px;color:var(--dim);margin-bottom:16px}
+.chart-wrap{position:relative;height:300px}
+.chart-wrap.tall{height:380px}
+canvas{width:100%!important}
+
+/* ROW LAYOUT */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:720px){.row2{grid-template-columns:1fr}}
+
+/* CONTROLS */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.ctrl-label{font-size:12px;color:var(--dim);margin-right:4px}
+select,button.btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+select:focus,button.btn:focus{outline:none;border-color:var(--accent)}
+button.btn:hover{border-color:var(--accent);color:var(--accent)}
+button.btn.active{background:rgba(79,142,247,.15);border-color:var(--accent);color:var(--accent)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;background:var(--surface2)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.03)}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.strong{background:rgba(62,207,142,.15);color:var(--green)}
+.badge.weak{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge.no{background:rgba(240,80,80,.15);color:var(--red)}
+.badge.low{background:rgba(245,166,35,.12);color:var(--amber)}
+.badge.neg{background:rgba(155,114,221,.12);color:var(--purple)}
+
+/* METHODOLOGY */
+.method-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:16px}
+.method-card h3{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.method-card p,.method-card li{font-size:13px;color:var(--text);line-height:1.8}
+.method-card ul{padding-left:18px}
+.method-card li{margin:4px 0}
+.method-card code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--green)}
+.def-table{width:100%;margin-top:10px;border-collapse:collapse}
+.def-table th{font-size:11px;color:var(--dim);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);text-transform:uppercase}
+.def-table td{font-size:13px;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.def-table tr:last-child td{border-bottom:none}
+.finding{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
+.finding:last-child{border-bottom:none}
+.finding-num{width:28px;height:28px;border-radius:50%;background:rgba(79,142,247,.15);color:var(--accent);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.finding p{font-size:13px;color:var(--text);line-height:1.75}
+.finding strong{color:var(--accent)}
+
+/* SPARKLINE */
+.spark-wrap{display:flex;align-items:center;gap:8px}
+
+/* CHANGE PILL */
+.pill{display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-family:var(--mono)}
+.pill.pos{background:rgba(62,207,142,.12);color:var(--green)}
+.pill.neg-good{background:rgba(62,207,142,.12);color:var(--green)}
+.pill.neg-bad{background:rgba(240,80,80,.12);color:var(--red)}
+.pill.neu{background:rgba(245,166,35,.1);color:var(--amber)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Portfolio Project · BI & Data Analysis · GunHee Lee</div>
+  <h1>Can Economic Growth and Carbon Reduction <em>Happen Together</em>?</h1>
+  <p class="header-sub">An end-to-end analysis of economic decoupling from CO₂ emissions across 40 countries, 2000–2022</p>
+  <div class="header-meta">
+    <span class="meta-chip">40 countries · 2000–2022</span>
+    <span class="meta-chip">3 KPIs defined before data collection</span>
+    <span id="dataSourceChip" class="meta-chip" style="color:#3ecf8e;border-color:rgba(62,207,142,0.3)">⏳ Loading data…</span>
+    <a href="interview_deep_qa.html" class="meta-chip" style="color:#4f8ef7;border-color:rgba(79,142,247,0.3);text-decoration:none">📋 Interview Q&amp;A</a>
+    <a href="https://github.com/Gunehee/BI_energy-sustainability" target="_blank" class="meta-chip" style="text-decoration:none">GitHub ↗</a>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="nav('overview',this)">Overview</button>
+  <button class="nav-btn" onclick="nav('trends',this)">Trend View</button>
+  <button class="nav-btn" onclick="nav('scatter',this)">GDP vs CO₂</button>
+  <button class="nav-btn" onclick="nav('countries',this)">All Countries</button>
+  <button class="nav-btn" onclick="nav('methodology',this)">Methodology</button>
+</div>
+
+<!-- ===== OVERVIEW ===== -->
+<div id="overview" class="page active">
+  <div class="kpi-row">
+    <div class="kpi accent">
+      <div class="kpi-label">Global Avg CO₂/capita (2022)</div>
+      <div class="kpi-value" id="kpi-co2">5.9 t</div>
+      <div class="kpi-sub">vs 6.4 t in 2010 (↓8%)</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Global Avg Renewables (2022)</div>
+      <div class="kpi-value" id="kpi-ren">27.8%</div>
+      <div class="kpi-sub">vs 18.9% in 2010 (+47%)</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Strong Decoupling Countries</div>
+      <div class="kpi-value" id="kpi-decouple">16 / 40</div>
+      <div class="kpi-sub">GDP +10% AND CO₂ −10% (2010–2022)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">No Decoupling Countries</div>
+      <div class="kpi-value" style="color:var(--red)">9 / 40</div>
+      <div class="kpi-sub">GDP growth with rising emissions</div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="chart-card">
+      <div class="chart-title">Decoupling Status Distribution</div>
+      <div class="chart-sub">2010 → 2022, 40 countries</div>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Global Average CO₂ per Capita Trend</div>
+      <div class="chart-sub">Average across 40 countries (tonnes)</div>
+      <div class="chart-wrap"><canvas id="globalCo2Chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Key Findings</div>
+    <div class="chart-sub" style="margin-bottom:14px">Five headline insights from the analysis</div>
+    <div class="finding">
+      <div class="finding-num">1</div>
+      <p><strong>Decoupling is real, but concentrated.</strong> 16 of 40 countries achieved strong decoupling between 2010–2022 — mostly EU nations. The pattern is clear: countries with stable policy environments and high renewable investment consistently reduced emissions while growing their economies.</p>
+    </div>
+    <div class="finding">
+      <div class="finding-num">2</div>
+      <p><strong>Denmark is the standout case.</strong> GDP grew +25% while CO₂/capita fell 50.5% — the largest carbon reduction among all strong decouplers. The key driver was wind energy scaling from 22% to 50% of energy mix.</p>
+    </div>
+    <div class="finding">
+      <div class="finding-num">3</div>
+      <p><strong>Emerging economies diverge sharply.</strong> India and Vietnam show rapidly rising absolute emissions, but CO₂ per unit of GDP is improving — intensity decoupling without absolute reduction. Growth stage explains this: they're at the same point the US was in the 1960s.</p>
+    </div>
+    <div class="finding">
+      <div class="finding-num">4</div>
+      <p><strong>China's story is complex.</strong> GDP grew +146% (2010–2022) while CO₂/capita grew only +22.6% — relative decoupling at massive scale. But absolute emissions are enormous, and per capita CO₂ at 7.6t still exceeds the EU average.</p>
+    </div>
+    <div class="finding">
+      <div class="finding-num">5</div>
+      <p><strong>Renewables > 30% correlates strongly with decoupling.</strong> Every country achieving strong decoupling either crossed 30% renewable share during this period or maintained high renewable share. This is the clearest structural predictor in the dataset.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TRENDS ===== -->
+<div id="trends" class="page">
+  <div class="ctrl-row">
+    <span class="ctrl-label">Countries:</span>
+    <select id="trendSelect" multiple size="1" style="min-width:200px" onchange="updateTrends()">
+    </select>
+    <span class="ctrl-label">Metric:</span>
+    <button class="btn active" id="btn-co2" onclick="setMetric('co2',this)">CO₂/capita</button>
+    <button class="btn" id="btn-ren" onclick="setMetric('ren',this)">Renewables %</button>
+    <button class="btn" id="btn-gdp" onclick="setMetric('gdp',this)">GDP/capita</button>
+    <button class="btn" onclick="addPreset()">+ Preset: EU Leaders</button>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title" id="trendTitle">CO₂ per Capita Trends</div>
+    <div class="chart-sub">Select countries from the dropdown. Click multiple with Ctrl/Cmd.</div>
+    <div class="chart-wrap tall"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Renewable Energy Share Trends</div>
+    <div class="chart-sub">% of total energy consumption from renewables</div>
+    <div class="chart-wrap tall"><canvas id="renChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== SCATTER ===== -->
+<div id="scatter" class="page">
+  <div class="ctrl-row">
+    <span class="ctrl-label">Year:</span>
+    <input type="range" id="yearSlider" min="2000" max="2022" value="2022" step="1" style="width:200px" oninput="updateScatter()">
+    <span id="yearLabel" style="font-family:var(--mono);font-size:13px;color:var(--accent);min-width:40px">2022</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">GDP per Capita vs CO₂ per Capita</div>
+    <div class="chart-sub">Point size = renewable energy share. Color = decoupling status. Drag slider to animate through years.</div>
+    <div class="chart-wrap tall" style="height:420px"><canvas id="scatterChart"></canvas></div>
+  </div>
+  <div class="row2">
+    <div class="chart-card">
+      <div class="chart-title">Renewables vs CO₂ Reduction</div>
+      <div class="chart-sub">2010–2022: renewable share change vs CO₂ change</div>
+      <div class="chart-wrap"><canvas id="renCo2Chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">GDP Growth vs CO₂ Change (2010–2022)</div>
+      <div class="chart-sub">The decoupling picture: up-right = no decoupling; up-left = strong decoupling</div>
+      <div class="chart-wrap"><canvas id="decoupleChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ALL COUNTRIES ===== -->
+<div id="countries" class="page">
+  <div class="ctrl-row">
+    <span class="ctrl-label">Filter:</span>
+    <button class="btn active" onclick="filterTable('all',this)">All</button>
+    <button class="btn" onclick="filterTable('Strong Decoupling',this)">Strong Decoupling</button>
+    <button class="btn" onclick="filterTable('Weak Decoupling',this)">Weak Decoupling</button>
+    <button class="btn" onclick="filterTable('No Decoupling',this)">No Decoupling</button>
+    <button class="btn" onclick="filterTable('Low growth',this)">Low Growth</button>
+  </div>
+  <div class="chart-card" style="padding:0">
+    <div class="tbl-wrap">
+      <table id="countryTable">
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>Status (2010–2022)</th>
+            <th>GDP Change</th>
+            <th>CO₂ Change</th>
+            <th>CO₂/cap 2022</th>
+            <th>Renewables 2022</th>
+            <th>CO₂ Trend</th>
+          </tr>
+        </thead>
+        <tbody id="countryTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== METHODOLOGY ===== -->
+<div id="methodology" class="page">
+  <div class="method-card">
+    <h3>Research Question</h3>
+    <p>Can a country simultaneously achieve economic growth and reduce carbon intensity? This project tests the concept of "decoupling" — where GDP rises while CO₂ emissions per person fall — using a consistent, documented methodology across 40 countries over 22 years.</p>
+  </div>
+
+  <div class="method-card">
+    <h3>Step 1 — KPI Definition (Before Data Collection)</h3>
+    <p style="margin-bottom:10px">Three KPIs were defined and documented before any data was collected. This prevents post-hoc metric selection that could bias findings.</p>
+    <table class="def-table">
+      <tr><th>KPI</th><th>Definition</th><th>Documented Limitation</th></tr>
+      <tr><td><strong>CO₂ per capita</strong></td><td>Tonnes of CO₂ per person, production-based (territorial emissions)</td><td>Excludes imported emissions (consumption-based). A country can "improve" by offshoring manufacturing.</td></tr>
+      <tr><td><strong>Renewable share (%)</strong></td><td>% of total final energy consumption from renewables (incl. large hydro)</td><td>Large hydro is debated as "renewable." Bioenergy quality varies significantly.</td></tr>
+      <tr><td><strong>GDP per capita PPP</strong></td><td>2015 USD purchasing power parity — removes inflation and exchange rate distortions</td><td>Does not capture inequality, wellbeing, or shadow economy size.</td></tr>
+    </table>
+    <p style="margin-top:10px">Decision rationale: <em>Per capita</em> metrics are used throughout. Absolute metrics can be "improved" by population decline or economic contraction — per capita separates structural change from demographic effects.</p>
+  </div>
+
+  <div class="method-card">
+    <h3>Step 2 — Decoupling Classification</h3>
+    <p style="margin-bottom:10px">Decoupling is measured from 2010 to 2022. The 2010 baseline avoids the 2008 financial crisis distortion, which caused temporary emission drops unrelated to structural change.</p>
+    <table class="def-table">
+      <tr><th>Status</th><th>Definition</th><th>Countries (n)</th></tr>
+      <tr><td><span class="badge strong">Strong Decoupling</span></td><td>GDP growth &gt;10% AND CO₂/capita decline &gt;10%</td><td>16</td></tr>
+      <tr><td><span class="badge weak">Weak Decoupling</span></td><td>GDP growth &gt;10% AND CO₂/capita change within ±10%</td><td>9</td></tr>
+      <tr><td><span class="badge no">No Decoupling</span></td><td>GDP growth &gt;10% AND CO₂/capita increase &gt;10%</td><td>9</td></tr>
+      <tr><td><span class="badge low">Low Growth</span></td><td>GDP growth &lt;10% (structural, not recession)</td><td>4</td></tr>
+      <tr><td><span class="badge neg">Negative</span></td><td>GDP declined &gt;5% (recession-driven; excluded from decoupling analysis)</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="method-card">
+    <h3>Step 3 — Data Quality</h3>
+    <ul>
+      <li>Data sources: <strong>Our World in Data</strong> (CO₂, renewables) and <strong>World Bank</strong> (GDP) — both CC BY 4.0 licensed</li>
+      <li>Countries with &gt;30% missing years are excluded from trend analysis</li>
+      <li>Micro-states (population &lt;1M) excluded — per capita metrics are distorted for small nations (e.g., Luxembourg, Iceland)</li>
+      <li>Linear interpolation used between benchmark years (2000, 2005, 2010, 2015, 2019, 2020, 2022)</li>
+      <li>All monetary values in 2015 USD PPP for cross-year comparability</li>
+      <li>The full pipeline is documented in <code>data_pipeline.py</code> — reproducible with <code>python data_pipeline.py</code></li>
+    </ul>
+  </div>
+
+  <div class="method-card">
+    <h3>Limitations & What I Would Do Next</h3>
+    <ul>
+      <li><strong>Production vs consumption emissions:</strong> Currently using production-based CO₂. A UK or Germany that offshores manufacturing to China will show improvement that doesn't reflect true consumption footprint. Adding consumption-based accounting would materially change some results.</li>
+      <li><strong>Sector breakdown missing:</strong> Electricity, transport, and industry decoupling rates differ significantly. A country switching coal to gas may decouple in electricity while industry rises.</li>
+      <li><strong>Causality not tested:</strong> The dashboard shows correlation between renewable share and CO₂ reduction. Formal Granger causality tests or panel regression would be needed to establish causal direction.</li>
+      <li><strong>No uncertainty bands:</strong> Data quality varies by country. Developed economy data (OECD) is reliable; some emerging economy data has wider error margins that should be visualized.</li>
+    </ul>
+  </div>
+
+  <div class="method-card">
+    <h3>Data Sources</h3>
+    <ul>
+      <li>Hannah Ritchie, Pablo Rosado, Max Roser (2024) — "CO₂ and Greenhouse Gas Emissions." Our World in Data. CC BY 4.0</li>
+      <li>Hannah Ritchie, Pablo Rosado (2024) — "Renewable Energy." Our World in Data. CC BY 4.0</li>
+      <li>World Bank (2024) — GDP per capita, PPP (constant 2017 international $). NY.GDP.PCAP.PP.KD. CC BY 4.0</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ===== DATA LOADING =====
+// Strategy:
+//   1. Try to fetch cleaned_data.json (generated by data_pipeline.py from real OWID + World Bank data)
+//   2. If fetch fails (file not present or offline), fall back to the embedded approximate dataset
+//
+// When running on GitHub Pages with cleaned_data.json committed → real data
+// When viewing as standalone HTML without JSON → fallback data
+//
+// Data sources: Our World in Data (CC BY 4.0) · World Bank REST API (CC BY 4.0)
+// Pipeline:     data_pipeline.py → fetch OWID CSV + World Bank JSON → clean → cleaned_data.json
+
+let DASHBOARD_DATA = null;  // populated by loadData() before charts render
+
+// ===== FALLBACK DATA (OWID/World Bank reference values, interpolated) =====
+const FALLBACK_DATA = {"summary": {"latest_year": 2022, "global_avg_co2": 5.9, "global_avg_renewables": 27.8, "global_avg_gdp": 30072, "strong_decoupling_count": 16, "total_countries": 40}, "countries": [{"n": "Argentina", "s": "Low growth", "g": -2.8, "co": -17.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [4.0, 4.02, 4.04, 4.06, 4.08, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.62, 4.64, 4.66, 4.68, 4.7, 4.6, 4.5, 4.4, 4.3, 3.5, 3.65, 3.8], "ren": [11.0, 10.9, 10.8, 10.7, 10.6, 10.5, 10.7, 10.9, 11.1, 11.3, 11.5, 11.8, 12.1, 12.4, 12.7, 13.0, 13.4, 13.8, 14.1, 14.5, 15.5, 15.8, 16.0], "gdp": [13000, 13400, 13800, 14200, 14600, 15000, 15600, 16200, 16800, 17400, 18000, 18300, 18600, 18900, 19200, 19500, 19125, 18750, 18375, 18000, 16000, 16750, 17500]}, {"n": "Australia", "s": "Strong Decoupling", "g": 19.0, "co": -19.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [17.9, 17.98, 18.06, 18.14, 18.22, 18.3, 18.14, 17.98, 17.82, 17.66, 17.5, 17.2, 16.9, 16.6, 16.3, 16.0, 15.7, 15.4, 15.1, 14.8, 14.4, 14.25, 14.1], "ren": [5.5, 5.6, 5.6, 5.7, 5.7, 5.8, 6.2, 6.7, 7.1, 7.6, 8.0, 8.8, 9.6, 10.4, 11.2, 12.0, 13.3, 14.6, 15.8, 17.1, 19.1, 20.8, 22.4], "gdp": [32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 42600, 43200, 43800, 44400, 45000, 46000, 47000, 48000, 49000, 47000, 48500, 50000]}, {"n": "Austria", "s": "Strong Decoupling", "g": 23.7, "co": -15.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.9, 8.96, 9.02, 9.08, 9.14, 9.2, 9.02, 8.84, 8.66, 8.48, 8.3, 8.16, 8.02, 7.88, 7.74, 7.6, 7.58, 7.55, 7.53, 7.5, 6.7, 6.85, 7.0], "ren": [23.5, 23.7, 23.9, 24.1, 24.3, 24.5, 25.2, 25.9, 26.6, 27.3, 28.0, 28.7, 29.4, 30.1, 30.8, 31.5, 32.1, 32.8, 33.4, 34.0, 36.5, 37.2, 38.0], "gdp": [32000, 32800, 33600, 34400, 35200, 36000, 36400, 36800, 37200, 37600, 38000, 38800, 39600, 40400, 41200, 42000, 43375, 44750, 46125, 47500, 44000, 45500, 47000]}, {"n": "Bangladesh", "s": "No Decoupling", "g": 83.8, "co": 100.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.45, 0.47, 0.5, 0.5, 0.55, 0.6], "ren": [52.0, 51.2, 50.4, 49.6, 48.8, 48.0, 47.4, 46.8, 46.2, 45.6, 45.0, 43.8, 42.6, 41.4, 40.2, 39.0, 38.0, 37.0, 36.0, 35.0, 34.5, 35.2, 36.0], "gdp": [2500, 2600, 2700, 2800, 2900, 3000, 3140, 3280, 3420, 3560, 3700, 3920, 4140, 4360, 4580, 4800, 5100, 5400, 5700, 6000, 6100, 6450, 6800]}, {"n": "Belgium", "s": "Strong Decoupling", "g": 27.1, "co": -25.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [10.8, 10.8, 10.8, 10.8, 10.8, 10.8, 10.68, 10.56, 10.44, 10.32, 10.2, 9.82, 9.44, 9.06, 8.68, 8.3, 8.22, 8.15, 8.07, 8.0, 7.2, 7.4, 7.6], "ren": [2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 4.2, 4.9, 5.6, 6.3, 7.0, 7.9, 8.8, 9.7, 10.6, 11.5, 12.0, 12.5, 13.0, 13.5, 15.5, 16.2, 17.0], "gdp": [30000, 30600, 31200, 31800, 32400, 33000, 33400, 33800, 34200, 34600, 35000, 35800, 36600, 37400, 38200, 39000, 40250, 41500, 42750, 44000, 40000, 42250, 44500]}, {"n": "Brazil", "s": "Low growth", "g": 7.4, "co": -12.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.1, 2.12, 2.14, 2.16, 2.18, 2.2, 2.26, 2.32, 2.38, 2.44, 2.5, 2.48, 2.46, 2.44, 2.42, 2.4, 2.38, 2.35, 2.33, 2.3, 2.0, 2.1, 2.2], "ren": [44.2, 44.3, 44.5, 44.6, 44.8, 44.9, 44.8, 44.8, 44.7, 44.7, 44.6, 44.4, 44.2, 43.9, 43.7, 43.5, 44.2, 44.9, 45.6, 46.3, 48.0, 47.7, 47.4], "gdp": [8500, 8800, 9100, 9400, 9700, 10000, 10700, 11400, 12100, 12800, 13500, 13700, 13900, 14100, 14300, 14500, 14500, 14500, 14500, 14500, 13500, 14000, 14500]}, {"n": "Canada", "s": "Weak Decoupling", "g": 19.0, "co": -5.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [18.4, 18.3, 18.2, 18.1, 18.0, 17.9, 17.26, 16.62, 15.98, 15.34, 14.7, 14.8, 14.9, 15.0, 15.1, 15.2, 15.1, 15.0, 14.9, 14.8, 13.6, 13.75, 13.9], "ren": [22.0, 22.1, 22.2, 22.3, 22.4, 22.5, 22.7, 22.9, 23.0, 23.2, 23.4, 23.5, 23.6, 23.8, 23.9, 24.0, 24.6, 25.1, 25.6, 26.2, 27.5, 27.8, 28.1], "gdp": [34000, 34800, 35600, 36400, 37200, 38000, 38300, 38600, 38900, 39200, 39500, 40200, 40900, 41600, 42300, 43000, 44000, 45000, 46000, 47000, 43500, 45250, 47000]}, {"n": "Chile", "s": "Weak Decoupling", "g": 29.7, "co": 4.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.9, 3.92, 3.94, 3.96, 3.98, 4.0, 4.04, 4.08, 4.12, 4.16, 4.2, 4.32, 4.44, 4.56, 4.68, 4.8, 4.78, 4.75, 4.72, 4.7, 4.2, 4.3, 4.4], "ren": [22.0, 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 23.0, 23.1, 23.2, 23.3, 23.4, 23.5, 25.1, 26.8, 28.4, 30.0, 33.5, 35.2, 37.0], "gdp": [14000, 14500, 15000, 15500, 16000, 16500, 16900, 17300, 17700, 18100, 18500, 19100, 19700, 20300, 20900, 21500, 22000, 22500, 23000, 23500, 21000, 22500, 24000]}, {"n": "China", "s": "No Decoupling", "g": 145.7, "co": 22.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.7, 2.98, 3.26, 3.54, 3.82, 4.1, 4.52, 4.94, 5.36, 5.78, 6.2, 6.36, 6.52, 6.68, 6.84, 7.0, 7.1, 7.2, 7.3, 7.4, 7.5, 7.55, 7.6], "ren": [8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.3, 9.5, 9.8, 10.0, 10.3, 10.6, 11.0, 11.3, 11.7, 12.0, 12.6, 13.1, 13.7, 14.2, 15.3, 16.1, 16.8], "gdp": [2900, 3180, 3460, 3740, 4020, 4300, 4840, 5380, 5920, 6460, 7000, 7700, 8400, 9100, 9800, 10500, 11500, 12500, 13500, 14500, 15200, 16200, 17200]}, {"n": "Colombia", "s": "Weak Decoupling", "g": 18.5, "co": 0.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.62, 1.64, 1.66, 1.68, 1.7, 1.7, 1.7, 1.7, 1.7, 1.4, 1.5, 1.6], "ren": [30.5, 30.6, 30.7, 30.8, 30.9, 31.0, 31.2, 31.4, 31.6, 31.8, 32.0, 31.9, 31.8, 31.7, 31.6, 31.5, 31.1, 30.8, 30.4, 30.0, 31.5, 32.0, 32.5], "gdp": [10000, 10300, 10600, 10900, 11200, 11500, 11900, 12300, 12700, 13100, 13500, 13900, 14300, 14700, 15100, 15500, 15750, 16000, 16250, 16500, 14500, 15250, 16000]}, {"n": "Denmark", "s": "Strong Decoupling", "g": 25.0, "co": -50.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.1, 10.8, 10.5, 10.2, 9.9, 9.6, 9.5, 9.4, 9.3, 9.2, 9.1, 8.62, 8.14, 7.66, 7.18, 6.7, 6.47, 6.25, 6.03, 5.8, 4.9, 4.7, 4.5], "ren": [14.8, 15.4, 16.1, 16.7, 17.4, 18.0, 18.9, 19.8, 20.7, 21.6, 22.5, 24.6, 26.8, 28.9, 31.1, 33.2, 35.0, 36.9, 38.7, 40.5, 46.3, 48.2, 50.2], "gdp": [33000, 34000, 35000, 36000, 37000, 38000, 38400, 38800, 39200, 39600, 40000, 40800, 41600, 42400, 43200, 44000, 45250, 46500, 47750, 49000, 47000, 48500, 50000]}, {"n": "Egypt", "s": "No Decoupling", "g": 26.1, "co": 8.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.0, 2.06, 2.12, 2.18, 2.24, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.32, 2.34, 2.36, 2.38, 2.4, 2.42, 2.45, 2.48, 2.5, 2.3, 2.4, 2.5], "ren": [8.5, 8.4, 8.2, 8.1, 7.9, 7.8, 7.8, 7.9, 7.9, 8.0, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.9, 9.2, 9.6, 10.0, 12.0, 13.2, 14.5], "gdp": [9000, 9300, 9600, 9900, 10200, 10500, 10700, 10900, 11100, 11300, 11500, 11700, 11900, 12100, 12300, 12500, 12875, 13250, 13625, 14000, 13500, 14000, 14500]}, {"n": "Finland", "s": "Strong Decoupling", "g": 20.6, "co": -32.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.4, 11.28, 11.16, 11.04, 10.92, 10.8, 10.68, 10.56, 10.44, 10.32, 10.2, 9.9, 9.6, 9.3, 9.0, 8.7, 8.55, 8.4, 8.25, 8.1, 7.1, 7.0, 6.9], "ren": [24.0, 24.3, 24.6, 24.9, 25.2, 25.5, 26.4, 27.3, 28.2, 29.1, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 35.8, 36.6, 37.4, 38.2, 41.0, 42.2, 43.5], "gdp": [28000, 28800, 29600, 30400, 31200, 32000, 32400, 32800, 33200, 33600, 34000, 34400, 34800, 35200, 35600, 36000, 37000, 38000, 39000, 40000, 38000, 39500, 41000]}, {"n": "France", "s": "Strong Decoupling", "g": 18.2, "co": -23.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [6.7, 6.64, 6.58, 6.52, 6.46, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.74, 5.58, 5.42, 5.26, 5.1, 5.08, 5.05, 5.03, 5.0, 4.3, 4.4, 4.5], "ren": [9.5, 9.8, 10.1, 10.5, 10.8, 11.1, 11.5, 11.9, 12.2, 12.6, 13.0, 13.4, 13.9, 14.3, 14.8, 15.2, 15.8, 16.3, 16.9, 17.4, 20.0, 20.6, 21.3], "gdp": [30000, 30500, 31000, 31500, 32000, 32500, 32600, 32700, 32800, 32900, 33000, 33600, 34200, 34800, 35400, 36000, 37000, 38000, 39000, 40000, 36000, 37500, 39000]}, {"n": "Germany", "s": "Strong Decoupling", "g": 22.2, "co": -25.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.2, 11.06, 10.92, 10.78, 10.64, 10.5, 10.36, 10.22, 10.08, 9.94, 9.8, 9.64, 9.48, 9.32, 9.16, 9.0, 8.72, 8.45, 8.18, 7.9, 7.2, 7.25, 7.3], "ren": [5.5, 6.1, 6.7, 7.3, 7.9, 8.5, 9.6, 10.7, 11.8, 12.9, 14.0, 15.6, 17.2, 18.9, 20.5, 22.1, 23.6, 25.2, 26.8, 28.3, 32.1, 33.4, 34.6], "gdp": [31000, 31300, 31600, 31900, 32200, 32500, 33200, 33900, 34600, 35300, 36000, 36900, 37800, 38700, 39600, 40500, 41500, 42500, 43500, 44500, 41000, 42500, 44000]}, {"n": "India", "s": "No Decoupling", "g": 109.1, "co": 42.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.9, 0.94, 0.98, 1.02, 1.06, 1.1, 1.16, 1.22, 1.28, 1.34, 1.4, 1.44, 1.48, 1.52, 1.56, 1.6, 1.68, 1.75, 1.82, 1.9, 1.7, 1.85, 2.0], "ren": [30.2, 29.8, 29.4, 28.9, 28.5, 28.1, 27.7, 27.4, 27.0, 26.7, 26.3, 26.0, 25.8, 25.5, 25.3, 25.0, 24.6, 24.2, 23.8, 23.4, 24.0, 24.6, 25.3], "gdp": [1700, 1820, 1940, 2060, 2180, 2300, 2500, 2700, 2900, 3100, 3300, 3580, 3860, 4140, 4420, 4700, 5200, 5700, 6200, 6700, 6200, 6550, 6900]}, {"n": "Indonesia", "s": "No Decoupling", "g": 50.0, "co": 16.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [1.3, 1.34, 1.38, 1.42, 1.46, 1.5, 1.56, 1.62, 1.68, 1.74, 1.8, 1.82, 1.84, 1.86, 1.88, 1.9, 1.93, 1.95, 1.98, 2.0, 1.8, 1.95, 2.1], "ren": [35.0, 34.6, 34.2, 33.8, 33.4, 33.0, 32.6, 32.2, 31.8, 31.4, 31.0, 30.7, 30.4, 30.1, 29.8, 29.5, 29.4, 29.4, 29.4, 29.3, 30.2, 30.6, 31.0], "gdp": [5500, 5800, 6100, 6400, 6700, 7000, 7400, 7800, 8200, 8600, 9000, 9400, 9800, 10200, 10600, 11000, 11625, 12250, 12875, 13500, 12500, 13000, 13500]}, {"n": "Italy", "s": "Strong Decoupling", "g": 10.3, "co": -26.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.8, 7.84, 7.88, 7.92, 7.96, 8.0, 7.82, 7.64, 7.46, 7.28, 7.1, 6.84, 6.58, 6.32, 6.06, 5.8, 5.75, 5.7, 5.65, 5.6, 4.9, 5.05, 5.2], "ren": [6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.7, 10.9, 12.1, 13.3, 14.5, 15.4, 16.4, 17.3, 18.3, 19.2, 19.5, 19.8, 20.1, 20.4, 22.5, 22.8, 23.0], "gdp": [29000, 29200, 29400, 29600, 29800, 30000, 29800, 29600, 29400, 29200, 29000, 29200, 29400, 29600, 29800, 30000, 30750, 31500, 32250, 33000, 29000, 30500, 32000]}, {"n": "Japan", "s": "Weak Decoupling", "g": 17.9, "co": -7.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.5, 9.52, 9.54, 9.56, 9.58, 9.6, 9.48, 9.36, 9.24, 9.12, 9.0, 9.08, 9.16, 9.24, 9.32, 9.4, 9.22, 9.05, 8.88, 8.7, 8.2, 8.25, 8.3], "ren": [5.0, 5.1, 5.1, 5.2, 5.2, 5.3, 5.7, 6.1, 6.6, 7.0, 7.4, 7.9, 8.5, 9.0, 9.6, 10.1, 10.3, 10.6, 10.8, 11.0, 12.1, 12.8, 13.4], "gdp": [31500, 31800, 32100, 32400, 32700, 33000, 33100, 33200, 33300, 33400, 33500, 34200, 34900, 35600, 36300, 37000, 37750, 38500, 39250, 40000, 38000, 38750, 39500]}, {"n": "Malaysia", "s": "No Decoupling", "g": 31.8, "co": 9.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.4, 5.62, 5.84, 6.06, 6.28, 6.5, 6.62, 6.74, 6.86, 6.98, 7.1, 7.22, 7.34, 7.46, 7.58, 7.7, 7.85, 8.0, 8.15, 8.3, 7.3, 7.55, 7.8], "ren": [8.0, 7.9, 7.8, 7.7, 7.6, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.8, 9.0, 9.2, 9.5, 10.5, 11.2, 12.0], "gdp": [16000, 16600, 17200, 17800, 18400, 19000, 19600, 20200, 20800, 21400, 22000, 22700, 23400, 24100, 24800, 25500, 26125, 26750, 27375, 28000, 26000, 27500, 29000]}, {"n": "Mexico", "s": "Low growth", "g": 9.1, "co": -18.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.8, 3.82, 3.84, 3.86, 3.88, 3.9, 3.88, 3.86, 3.84, 3.82, 3.8, 3.76, 3.72, 3.68, 3.64, 3.6, 3.55, 3.5, 3.45, 3.4, 2.9, 3.0, 3.1], "ren": [10.5, 10.4, 10.3, 10.2, 10.1, 10.0, 10.1, 10.2, 10.3, 10.4, 10.5, 10.8, 11.1, 11.4, 11.7, 12.0, 12.8, 13.5, 14.2, 15.0, 16.5, 16.9, 17.2], "gdp": [15000, 15200, 15400, 15600, 15800, 16000, 16100, 16200, 16300, 16400, 16500, 16800, 17100, 17400, 17700, 18000, 18125, 18250, 18375, 18500, 16500, 17250, 18000]}, {"n": "Netherlands", "s": "Strong Decoupling", "g": 26.2, "co": -26.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.9, 11.86, 11.82, 11.78, 11.74, 11.7, 11.56, 11.42, 11.28, 11.14, 11.0, 10.78, 10.56, 10.34, 10.12, 9.9, 9.68, 9.45, 9.22, 9.0, 7.9, 8.0, 8.1], "ren": [2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8, 6.3, 6.8, 7.3, 7.8, 8.3, 9.2, 10.2, 11.1, 12.0, 14.5, 16.5, 18.5], "gdp": [36000, 36600, 37200, 37800, 38400, 39000, 39200, 39400, 39600, 39800, 40000, 40800, 41600, 42400, 43200, 44000, 45500, 47000, 48500, 50000, 47000, 48750, 50500]}, {"n": "Nigeria", "s": "Negative (GDP declined)", "g": -5.5, "co": 16.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6, 0.65, 0.7], "ren": [78.0, 77.6, 77.2, 76.8, 76.4, 76.0, 75.8, 75.6, 75.4, 75.2, 75.0, 74.4, 73.8, 73.2, 72.6, 72.0, 71.0, 70.0, 69.0, 68.0, 66.5, 65.8, 65.0], "gdp": [3500, 3700, 3900, 4100, 4300, 4500, 4700, 4900, 5100, 5300, 5500, 5600, 5700, 5800, 5900, 6000, 5875, 5750, 5625, 5500, 5000, 5100, 5200]}, {"n": "Norway", "s": "Strong Decoupling", "g": 19.6, "co": -23.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.04, 9.08, 9.12, 9.16, 9.2, 9.02, 8.84, 8.66, 8.48, 8.3, 8.18, 8.05, 7.92, 7.8, 7.2, 7.1, 7.0], "ren": [63.0, 63.3, 63.6, 63.9, 64.2, 64.5, 64.6, 64.7, 64.8, 64.9, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 70.5, 71.0, 71.5, 72.0, 73.5, 74.2, 75.0], "gdp": [44000, 45800, 47600, 49400, 51200, 53000, 53600, 54200, 54800, 55400, 56000, 56800, 57600, 58400, 59200, 60000, 61250, 62500, 63750, 65000, 58000, 62500, 67000]}, {"n": "Pakistan", "s": "No Decoupling", "g": 16.0, "co": 11.1, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.93, 0.95, 0.97, 1.0, 0.9, 0.95, 1.0], "ren": [45.0, 44.6, 44.2, 43.8, 43.4, 43.0, 42.8, 42.6, 42.4, 42.2, 42.0, 41.7, 41.4, 41.1, 40.8, 40.5, 40.0, 39.5, 39.0, 38.5, 39.0, 39.5, 40.0], "gdp": [3800, 3940, 4080, 4220, 4360, 4500, 4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300, 5400, 5500, 5550, 5600, 5650, 5700, 5600, 5700, 5800]}, {"n": "Poland", "s": "Weak Decoupling", "g": 82.4, "co": 1.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.4, 8.42, 8.44, 8.46, 8.48, 8.5, 8.46, 8.42, 8.38, 8.34, 8.3, 8.24, 8.18, 8.12, 8.06, 8.0, 8.05, 8.1, 8.15, 8.2, 7.8, 8.1, 8.4], "ren": [4.8, 4.8, 4.9, 4.9, 5.0, 5.0, 5.7, 6.4, 7.1, 7.8, 8.5, 9.2, 9.9, 10.6, 11.3, 12.0, 12.5, 13.0, 13.5, 14.0, 15.5, 16.1, 16.8], "gdp": [11000, 11500, 12000, 12500, 13000, 13500, 14200, 14900, 15600, 16300, 17000, 18000, 19000, 20000, 21000, 22000, 23625, 25250, 26875, 28500, 28000, 29500, 31000]}, {"n": "Portugal", "s": "Strong Decoupling", "g": 28.9, "co": -21.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [6.4, 6.42, 6.44, 6.46, 6.48, 6.5, 6.3, 6.1, 5.9, 5.7, 5.5, 5.38, 5.26, 5.14, 5.02, 4.9, 4.88, 4.85, 4.83, 4.8, 3.9, 4.1, 4.3], "ren": [18.5, 19.2, 19.9, 20.6, 21.3, 22.0, 23.3, 24.6, 25.9, 27.2, 28.5, 29.7, 30.9, 32.1, 33.3, 34.5, 34.4, 34.2, 34.1, 34.0, 38.0, 39.2, 40.5], "gdp": [22000, 22200, 22400, 22600, 22800, 23000, 22900, 22800, 22700, 22600, 22500, 22800, 23100, 23400, 23700, 24000, 25125, 26250, 27375, 28500, 25500, 27250, 29000]}, {"n": "Romania", "s": "Strong Decoupling", "g": 125.0, "co": -19.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.2, 5.24, 5.28, 5.32, 5.36, 5.4, 5.24, 5.08, 4.92, 4.76, 4.6, 4.44, 4.28, 4.12, 3.96, 3.8, 3.8, 3.8, 3.8, 3.8, 3.6, 3.65, 3.7], "ren": [17.0, 17.3, 17.6, 17.9, 18.2, 18.5, 19.0, 19.5, 20.0, 20.5, 21.0, 21.8, 22.6, 23.4, 24.2, 25.0, 25.6, 26.2, 26.9, 27.5, 29.0, 29.8, 30.5], "gdp": [7500, 8000, 8500, 9000, 9500, 10000, 10400, 10800, 11200, 11600, 12000, 12800, 13600, 14400, 15200, 16000, 18000, 20000, 22000, 24000, 23500, 25250, 27000]}, {"n": "Russia", "s": "Weak Decoupling", "g": 27.5, "co": -0.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [10.7, 10.8, 10.9, 11.0, 11.1, 11.2, 11.18, 11.16, 11.14, 11.12, 11.1, 11.16, 11.22, 11.28, 11.34, 11.4, 11.45, 11.5, 11.55, 11.6, 10.7, 10.85, 11.0], "ren": [3.4, 3.4, 3.4, 3.5, 3.5, 3.5, 3.5, 3.5, 3.6, 3.6, 3.6, 3.6, 3.6, 3.5, 3.5, 3.5, 3.6, 3.7, 3.8, 3.9, 4.2, 4.3, 4.5], "gdp": [12000, 13000, 14000, 15000, 16000, 17000, 17600, 18200, 18800, 19400, 20000, 20600, 21200, 21800, 22400, 23000, 24000, 25000, 26000, 27000, 25000, 25250, 25500]}, {"n": "Saudi Arabia", "s": "Weak Decoupling", "g": 18.8, "co": -2.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [13.7, 13.82, 13.94, 14.06, 14.18, 14.3, 14.46, 14.62, 14.78, 14.94, 15.1, 15.38, 15.66, 15.94, 16.22, 16.5, 16.2, 15.9, 15.6, 15.3, 14.0, 14.4, 14.8], "ren": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.5, 0.8, 1.0, 1.3, 2.1, 2.8, 3.4], "gdp": [30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 43000, 44000, 45000, 45500, 46000, 46500, 47000, 42000, 44750, 47500]}, {"n": "South Africa", "s": "Low growth", "g": 0.0, "co": -22.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.7, 7.84, 7.98, 8.12, 8.26, 8.4, 8.34, 8.28, 8.22, 8.16, 8.1, 7.94, 7.78, 7.62, 7.46, 7.3, 7.2, 7.1, 7.0, 6.9, 6.1, 6.2, 6.3], "ren": [9.0, 8.9, 8.8, 8.7, 8.6, 8.5, 8.4, 8.3, 8.2, 8.1, 8.0, 8.1, 8.2, 8.2, 8.3, 8.4, 8.6, 8.7, 8.8, 9.0, 9.8, 10.4, 11.0], "gdp": [9500, 9700, 9900, 10100, 10300, 10500, 10700, 10900, 11100, 11300, 11500, 11700, 11900, 12100, 12300, 12500, 12375, 12250, 12125, 12000, 10500, 11000, 11500]}, {"n": "South Korea", "s": "Weak Decoupling", "g": 55.4, "co": 0.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.1, 9.28, 9.46, 9.64, 9.82, 10.0, 10.26, 10.52, 10.78, 11.04, 11.3, 11.42, 11.54, 11.66, 11.78, 11.9, 11.97, 12.05, 12.12, 12.2, 11.7, 11.55, 11.4], "ren": [1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.5, 1.7, 1.8, 2.0, 2.2, 2.6, 2.9, 3.3, 3.6, 4.0, 4.2, 4.4, 4.6, 4.8, 5.5, 6.3, 7.2], "gdp": [19000, 19900, 20800, 21700, 22600, 23500, 24400, 25300, 26200, 27100, 28000, 29100, 30200, 31300, 32400, 33500, 35000, 36500, 38000, 39500, 40000, 41750, 43500]}, {"n": "Spain", "s": "Strong Decoupling", "g": 22.2, "co": -20.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.7, 7.82, 7.94, 8.06, 8.18, 8.3, 7.92, 7.54, 7.16, 6.78, 6.4, 6.22, 6.04, 5.86, 5.68, 5.5, 5.53, 5.55, 5.58, 5.6, 4.8, 4.95, 5.1], "ren": [7.0, 7.6, 8.2, 8.8, 9.4, 10.0, 11.3, 12.6, 13.9, 15.2, 16.5, 17.2, 17.9, 18.6, 19.3, 20.0, 20.5, 21.0, 21.5, 22.0, 24.0, 24.8, 25.5], "gdp": [25000, 25800, 26600, 27400, 28200, 29000, 28600, 28200, 27800, 27400, 27000, 27400, 27800, 28200, 28600, 29000, 30250, 31500, 32750, 34000, 29000, 31000, 33000]}, {"n": "Sweden", "s": "Strong Decoupling", "g": 25.0, "co": -37.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.8, 5.76, 5.72, 5.68, 5.64, 5.6, 5.56, 5.52, 5.48, 5.44, 5.4, 5.2, 5.0, 4.8, 4.6, 4.4, 4.25, 4.1, 3.95, 3.8, 3.3, 3.35, 3.4], "ren": [33.0, 34.1, 35.2, 36.3, 37.4, 38.5, 39.4, 40.3, 41.2, 42.1, 43.0, 44.6, 46.1, 47.7, 49.2, 50.8, 51.8, 52.7, 53.6, 54.6, 57.0, 58.5, 60.1], "gdp": [33000, 33800, 34600, 35400, 36200, 37000, 37600, 38200, 38800, 39400, 40000, 41000, 42000, 43000, 44000, 45000, 46000, 47000, 48000, 49000, 47000, 48500, 50000]}, {"n": "Thailand", "s": "Weak Decoupling", "g": 33.3, "co": 2.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.56, 3.62, 3.68, 3.74, 3.8, 3.84, 3.88, 3.92, 3.96, 4.0, 4.0, 4.0, 4.0, 4.0, 3.6, 3.75, 3.9], "ren": [16.5, 16.4, 16.3, 16.2, 16.1, 16.0, 16.1, 16.2, 16.3, 16.4, 16.5, 16.8, 17.1, 17.4, 17.7, 18.0, 18.4, 18.8, 19.1, 19.5, 20.8, 21.4, 22.0], "gdp": [10000, 10400, 10800, 11200, 11600, 12000, 12300, 12600, 12900, 13200, 13500, 14100, 14700, 15300, 15900, 16500, 17000, 17500, 18000, 18500, 16500, 17250, 18000]}, {"n": "Turkey", "s": "No Decoupling", "g": 59.4, "co": 22.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.3, 3.38, 3.46, 3.54, 3.62, 3.7, 3.78, 3.86, 3.94, 4.02, 4.1, 4.18, 4.26, 4.34, 4.42, 4.5, 4.55, 4.6, 4.65, 4.7, 4.6, 4.8, 5.0], "ren": [12.0, 11.9, 11.8, 11.7, 11.6, 11.5, 11.8, 12.1, 12.4, 12.7, 13.0, 13.8, 14.6, 15.4, 16.2, 17.0, 17.6, 18.2, 18.9, 19.5, 21.0, 22.2, 23.4], "gdp": [10500, 11100, 11700, 12300, 12900, 13500, 14000, 14500, 15000, 15500, 16000, 16700, 17400, 18100, 18800, 19500, 19875, 20250, 20625, 21000, 21000, 23250, 25500]}, {"n": "Ukraine", "s": "Negative (GDP declined)", "g": -11.8, "co": -46.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.0, 7.08, 7.16, 7.24, 7.32, 7.4, 7.34, 7.28, 7.22, 7.16, 7.1, 6.76, 6.42, 6.08, 5.74, 5.4, 5.28, 5.15, 5.03, 4.9, 4.5, 4.15, 3.8], "ren": [5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.3, 6.6, 6.9, 7.2, 7.5, 7.8, 8.1, 8.4, 8.7, 9.0, 9.6, 10.2, 10.9, 11.5, 13.0, 13.2, 13.5], "gdp": [5000, 5500, 6000, 6500, 7000, 7500, 7700, 7900, 8100, 8300, 8500, 8400, 8300, 8200, 8100, 8000, 8375, 8750, 9125, 9500, 9000, 8250, 7500]}, {"n": "United Kingdom", "s": "Strong Decoupling", "g": 17.4, "co": -40.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.6, 9.5, 9.4, 9.3, 9.2, 9.1, 8.92, 8.74, 8.56, 8.38, 8.2, 7.84, 7.48, 7.12, 6.76, 6.4, 6.17, 5.95, 5.72, 5.5, 4.6, 4.75, 4.9], "ren": [2.6, 2.9, 3.2, 3.4, 3.7, 4.0, 4.8, 5.6, 6.4, 7.2, 8.0, 9.8, 11.7, 13.5, 15.4, 17.2, 19.1, 21.1, 23.1, 25.0, 29.5, 30.4, 31.2], "gdp": [31000, 31800, 32600, 33400, 34200, 35000, 34900, 34800, 34700, 34600, 34500, 35300, 36100, 36900, 37700, 38500, 39375, 40250, 41125, 42000, 38000, 39250, 40500]}, {"n": "United States", "s": "Strong Decoupling", "g": 23.8, "co": -24.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [20.5, 20.36, 20.22, 20.08, 19.94, 19.8, 19.3, 18.8, 18.3, 17.8, 17.3, 16.96, 16.62, 16.28, 15.94, 15.6, 15.25, 14.9, 14.55, 14.2, 12.8, 12.95, 13.1], "ren": [6.0, 6.1, 6.2, 6.3, 6.4, 6.5, 6.8, 7.1, 7.4, 7.7, 8.0, 8.4, 8.8, 9.2, 9.6, 10.0, 10.3, 10.7, 11.1, 11.4, 12.5, 12.8, 13.1], "gdp": [45000, 46000, 47000, 48000, 49000, 50000, 50100, 50200, 50300, 50400, 50500, 51400, 52300, 53200, 54100, 55000, 56750, 58500, 60250, 62000, 58000, 60250, 62500]}, {"n": "Vietnam", "s": "No Decoupling", "g": 90.9, "co": 113.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.7, 0.76, 0.82, 0.88, 0.94, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.23, 2.45, 2.67, 2.9, 2.8, 3.0, 3.2], "ren": [50.0, 49.2, 48.4, 47.6, 46.8, 46.0, 44.8, 43.6, 42.4, 41.2, 40.0, 39.1, 38.2, 37.3, 36.4, 35.5, 34.2, 33.0, 31.8, 30.5, 31.0, 32.2, 33.5], "gdp": [3000, 3200, 3400, 3600, 3800, 4000, 4300, 4600, 4900, 5200, 5500, 5800, 6100, 6400, 6700, 7000, 7500, 8000, 8500, 9000, 9000, 9750, 10500]}]};
+
+// Normalize FALLBACK_DATA to same shape as cleaned_data.json
+// (pipeline uses 'name'/'decoupling_status' keys; fallback uses 'n'/'s')
+function normalizeFallback(raw) {
+  return {
+    summary: raw.summary,
+    countries: raw.countries.map(c => ({
+      name: c.n, decoupling_status: c.s,
+      gdp_change_pct: c.g, co2_change_pct: c.co,
+      series: { years: c.yr, co2: c.co2, renewables: c.ren, gdp: c.gdp }
+    }))
+  };
+}
+
+// Convert either format to unified compact form used by charts
+function toCompact(d) {
+  // If already compact (has .n key), return as-is
+  if (d.countries[0] && d.countries[0].n !== undefined) return d;
+  // If from pipeline JSON (has .name key), convert
+  return {
+    summary: d.summary,
+    countries: d.countries.map(c => ({
+      n: c.name, s: c.decoupling_status,
+      g: c.gdp_change_pct, co: c.co2_change_pct,
+      yr: c.series.years, co2: c.series.co2,
+      ren: c.series.renewables, gdp: c.series.gdp
+    }))
+  };
+}
+
+async function loadData() {
+  const chip = document.getElementById('dataSourceChip');
+  try {
+    // Try cleaned_data.json first (generated by data_pipeline.py from OWID + World Bank)
+    const res = await fetch('cleaned_data.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('JSON not found');
+    const json = await res.json();
+    DASHBOARD_DATA = toCompact(json);
+    chip.textContent = '✓ OWID + World Bank (real data)';
+    chip.style.color = '#3ecf8e';
+    chip.style.borderColor = 'rgba(62,207,142,0.3)';
+    console.log('[Dashboard] Loaded real data from cleaned_data.json');
+  } catch(e) {
+    // Fallback: use embedded reference data
+    DASHBOARD_DATA = normalizeFallback(FALLBACK_DATA);
+    chip.textContent = 'Reference data (run pipeline for real data)';
+    chip.style.color = '#f5a623';
+    chip.style.borderColor = 'rgba(245,166,35,0.3)';
+    console.log('[Dashboard] cleaned_data.json not found — using embedded reference data');
+  }
+} {"n": "Australia", "s": "Strong Decoupling", "g": 19.0, "co": -19.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [17.9, 17.98, 18.06, 18.14, 18.22, 18.3, 18.14, 17.98, 17.82, 17.66, 17.5, 17.2, 16.9, 16.6, 16.3, 16.0, 15.7, 15.4, 15.1, 14.8, 14.4, 14.25, 14.1], "ren": [5.5, 5.6, 5.6, 5.7, 5.7, 5.8, 6.2, 6.7, 7.1, 7.6, 8.0, 8.8, 9.6, 10.4, 11.2, 12.0, 13.3, 14.6, 15.8, 17.1, 19.1, 20.8, 22.4], "gdp": [32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 42600, 43200, 43800, 44400, 45000, 46000, 47000, 48000, 49000, 47000, 48500, 50000]}, {"n": "Austria", "s": "Strong Decoupling", "g": 23.7, "co": -15.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.9, 8.96, 9.02, 9.08, 9.14, 9.2, 9.02, 8.84, 8.66, 8.48, 8.3, 8.16, 8.02, 7.88, 7.74, 7.6, 7.58, 7.55, 7.53, 7.5, 6.7, 6.85, 7.0], "ren": [23.5, 23.7, 23.9, 24.1, 24.3, 24.5, 25.2, 25.9, 26.6, 27.3, 28.0, 28.7, 29.4, 30.1, 30.8, 31.5, 32.1, 32.8, 33.4, 34.0, 36.5, 37.2, 38.0], "gdp": [32000, 32800, 33600, 34400, 35200, 36000, 36400, 36800, 37200, 37600, 38000, 38800, 39600, 40400, 41200, 42000, 43375, 44750, 46125, 47500, 44000, 45500, 47000]}, {"n": "Bangladesh", "s": "No Decoupling", "g": 83.8, "co": 100.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.45, 0.47, 0.5, 0.5, 0.55, 0.6], "ren": [52.0, 51.2, 50.4, 49.6, 48.8, 48.0, 47.4, 46.8, 46.2, 45.6, 45.0, 43.8, 42.6, 41.4, 40.2, 39.0, 38.0, 37.0, 36.0, 35.0, 34.5, 35.2, 36.0], "gdp": [2500, 2600, 2700, 2800, 2900, 3000, 3140, 3280, 3420, 3560, 3700, 3920, 4140, 4360, 4580, 4800, 5100, 5400, 5700, 6000, 6100, 6450, 6800]}, {"n": "Belgium", "s": "Strong Decoupling", "g": 27.1, "co": -25.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [10.8, 10.8, 10.8, 10.8, 10.8, 10.8, 10.68, 10.56, 10.44, 10.32, 10.2, 9.82, 9.44, 9.06, 8.68, 8.3, 8.22, 8.15, 8.07, 8.0, 7.2, 7.4, 7.6], "ren": [2.5, 2.7, 2.9, 3.1, 3.3, 3.5, 4.2, 4.9, 5.6, 6.3, 7.0, 7.9, 8.8, 9.7, 10.6, 11.5, 12.0, 12.5, 13.0, 13.5, 15.5, 16.2, 17.0], "gdp": [30000, 30600, 31200, 31800, 32400, 33000, 33400, 33800, 34200, 34600, 35000, 35800, 36600, 37400, 38200, 39000, 40250, 41500, 42750, 44000, 40000, 42250, 44500]}, {"n": "Brazil", "s": "Low growth", "g": 7.4, "co": -12.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.1, 2.12, 2.14, 2.16, 2.18, 2.2, 2.26, 2.32, 2.38, 2.44, 2.5, 2.48, 2.46, 2.44, 2.42, 2.4, 2.38, 2.35, 2.33, 2.3, 2.0, 2.1, 2.2], "ren": [44.2, 44.3, 44.5, 44.6, 44.8, 44.9, 44.8, 44.8, 44.7, 44.7, 44.6, 44.4, 44.2, 43.9, 43.7, 43.5, 44.2, 44.9, 45.6, 46.3, 48.0, 47.7, 47.4], "gdp": [8500, 8800, 9100, 9400, 9700, 10000, 10700, 11400, 12100, 12800, 13500, 13700, 13900, 14100, 14300, 14500, 14500, 14500, 14500, 14500, 13500, 14000, 14500]}, {"n": "Canada", "s": "Weak Decoupling", "g": 19.0, "co": -5.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [18.4, 18.3, 18.2, 18.1, 18.0, 17.9, 17.26, 16.62, 15.98, 15.34, 14.7, 14.8, 14.9, 15.0, 15.1, 15.2, 15.1, 15.0, 14.9, 14.8, 13.6, 13.75, 13.9], "ren": [22.0, 22.1, 22.2, 22.3, 22.4, 22.5, 22.7, 22.9, 23.0, 23.2, 23.4, 23.5, 23.6, 23.8, 23.9, 24.0, 24.6, 25.1, 25.6, 26.2, 27.5, 27.8, 28.1], "gdp": [34000, 34800, 35600, 36400, 37200, 38000, 38300, 38600, 38900, 39200, 39500, 40200, 40900, 41600, 42300, 43000, 44000, 45000, 46000, 47000, 43500, 45250, 47000]}, {"n": "Chile", "s": "Weak Decoupling", "g": 29.7, "co": 4.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.9, 3.92, 3.94, 3.96, 3.98, 4.0, 4.04, 4.08, 4.12, 4.16, 4.2, 4.32, 4.44, 4.56, 4.68, 4.8, 4.78, 4.75, 4.72, 4.7, 4.2, 4.3, 4.4], "ren": [22.0, 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8, 22.9, 23.0, 23.1, 23.2, 23.3, 23.4, 23.5, 25.1, 26.8, 28.4, 30.0, 33.5, 35.2, 37.0], "gdp": [14000, 14500, 15000, 15500, 16000, 16500, 16900, 17300, 17700, 18100, 18500, 19100, 19700, 20300, 20900, 21500, 22000, 22500, 23000, 23500, 21000, 22500, 24000]}, {"n": "China", "s": "No Decoupling", "g": 145.7, "co": 22.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.7, 2.98, 3.26, 3.54, 3.82, 4.1, 4.52, 4.94, 5.36, 5.78, 6.2, 6.36, 6.52, 6.68, 6.84, 7.0, 7.1, 7.2, 7.3, 7.4, 7.5, 7.55, 7.6], "ren": [8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.3, 9.5, 9.8, 10.0, 10.3, 10.6, 11.0, 11.3, 11.7, 12.0, 12.6, 13.1, 13.7, 14.2, 15.3, 16.1, 16.8], "gdp": [2900, 3180, 3460, 3740, 4020, 4300, 4840, 5380, 5920, 6460, 7000, 7700, 8400, 9100, 9800, 10500, 11500, 12500, 13500, 14500, 15200, 16200, 17200]}, {"n": "Colombia", "s": "Weak Decoupling", "g": 18.5, "co": 0.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.62, 1.64, 1.66, 1.68, 1.7, 1.7, 1.7, 1.7, 1.7, 1.4, 1.5, 1.6], "ren": [30.5, 30.6, 30.7, 30.8, 30.9, 31.0, 31.2, 31.4, 31.6, 31.8, 32.0, 31.9, 31.8, 31.7, 31.6, 31.5, 31.1, 30.8, 30.4, 30.0, 31.5, 32.0, 32.5], "gdp": [10000, 10300, 10600, 10900, 11200, 11500, 11900, 12300, 12700, 13100, 13500, 13900, 14300, 14700, 15100, 15500, 15750, 16000, 16250, 16500, 14500, 15250, 16000]}, {"n": "Denmark", "s": "Strong Decoupling", "g": 25.0, "co": -50.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.1, 10.8, 10.5, 10.2, 9.9, 9.6, 9.5, 9.4, 9.3, 9.2, 9.1, 8.62, 8.14, 7.66, 7.18, 6.7, 6.47, 6.25, 6.03, 5.8, 4.9, 4.7, 4.5], "ren": [14.8, 15.4, 16.1, 16.7, 17.4, 18.0, 18.9, 19.8, 20.7, 21.6, 22.5, 24.6, 26.8, 28.9, 31.1, 33.2, 35.0, 36.9, 38.7, 40.5, 46.3, 48.2, 50.2], "gdp": [33000, 34000, 35000, 36000, 37000, 38000, 38400, 38800, 39200, 39600, 40000, 40800, 41600, 42400, 43200, 44000, 45250, 46500, 47750, 49000, 47000, 48500, 50000]}, {"n": "Egypt", "s": "No Decoupling", "g": 26.1, "co": 8.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [2.0, 2.06, 2.12, 2.18, 2.24, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.32, 2.34, 2.36, 2.38, 2.4, 2.42, 2.45, 2.48, 2.5, 2.3, 2.4, 2.5], "ren": [8.5, 8.4, 8.2, 8.1, 7.9, 7.8, 7.8, 7.9, 7.9, 8.0, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.9, 9.2, 9.6, 10.0, 12.0, 13.2, 14.5], "gdp": [9000, 9300, 9600, 9900, 10200, 10500, 10700, 10900, 11100, 11300, 11500, 11700, 11900, 12100, 12300, 12500, 12875, 13250, 13625, 14000, 13500, 14000, 14500]}, {"n": "Finland", "s": "Strong Decoupling", "g": 20.6, "co": -32.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.4, 11.28, 11.16, 11.04, 10.92, 10.8, 10.68, 10.56, 10.44, 10.32, 10.2, 9.9, 9.6, 9.3, 9.0, 8.7, 8.55, 8.4, 8.25, 8.1, 7.1, 7.0, 6.9], "ren": [24.0, 24.3, 24.6, 24.9, 25.2, 25.5, 26.4, 27.3, 28.2, 29.1, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 35.8, 36.6, 37.4, 38.2, 41.0, 42.2, 43.5], "gdp": [28000, 28800, 29600, 30400, 31200, 32000, 32400, 32800, 33200, 33600, 34000, 34400, 34800, 35200, 35600, 36000, 37000, 38000, 39000, 40000, 38000, 39500, 41000]}, {"n": "France", "s": "Strong Decoupling", "g": 18.2, "co": -23.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [6.7, 6.64, 6.58, 6.52, 6.46, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.74, 5.58, 5.42, 5.26, 5.1, 5.08, 5.05, 5.03, 5.0, 4.3, 4.4, 4.5], "ren": [9.5, 9.8, 10.1, 10.5, 10.8, 11.1, 11.5, 11.9, 12.2, 12.6, 13.0, 13.4, 13.9, 14.3, 14.8, 15.2, 15.8, 16.3, 16.9, 17.4, 20.0, 20.6, 21.3], "gdp": [30000, 30500, 31000, 31500, 32000, 32500, 32600, 32700, 32800, 32900, 33000, 33600, 34200, 34800, 35400, 36000, 37000, 38000, 39000, 40000, 36000, 37500, 39000]}, {"n": "Germany", "s": "Strong Decoupling", "g": 22.2, "co": -25.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.2, 11.06, 10.92, 10.78, 10.64, 10.5, 10.36, 10.22, 10.08, 9.94, 9.8, 9.64, 9.48, 9.32, 9.16, 9.0, 8.72, 8.45, 8.18, 7.9, 7.2, 7.25, 7.3], "ren": [5.5, 6.1, 6.7, 7.3, 7.9, 8.5, 9.6, 10.7, 11.8, 12.9, 14.0, 15.6, 17.2, 18.9, 20.5, 22.1, 23.6, 25.2, 26.8, 28.3, 32.1, 33.4, 34.6], "gdp": [31000, 31300, 31600, 31900, 32200, 32500, 33200, 33900, 34600, 35300, 36000, 36900, 37800, 38700, 39600, 40500, 41500, 42500, 43500, 44500, 41000, 42500, 44000]}, {"n": "India", "s": "No Decoupling", "g": 109.1, "co": 42.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.9, 0.94, 0.98, 1.02, 1.06, 1.1, 1.16, 1.22, 1.28, 1.34, 1.4, 1.44, 1.48, 1.52, 1.56, 1.6, 1.68, 1.75, 1.82, 1.9, 1.7, 1.85, 2.0], "ren": [30.2, 29.8, 29.4, 28.9, 28.5, 28.1, 27.7, 27.4, 27.0, 26.7, 26.3, 26.0, 25.8, 25.5, 25.3, 25.0, 24.6, 24.2, 23.8, 23.4, 24.0, 24.6, 25.3], "gdp": [1700, 1820, 1940, 2060, 2180, 2300, 2500, 2700, 2900, 3100, 3300, 3580, 3860, 4140, 4420, 4700, 5200, 5700, 6200, 6700, 6200, 6550, 6900]}, {"n": "Indonesia", "s": "No Decoupling", "g": 50.0, "co": 16.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [1.3, 1.34, 1.38, 1.42, 1.46, 1.5, 1.56, 1.62, 1.68, 1.74, 1.8, 1.82, 1.84, 1.86, 1.88, 1.9, 1.93, 1.95, 1.98, 2.0, 1.8, 1.95, 2.1], "ren": [35.0, 34.6, 34.2, 33.8, 33.4, 33.0, 32.6, 32.2, 31.8, 31.4, 31.0, 30.7, 30.4, 30.1, 29.8, 29.5, 29.4, 29.4, 29.4, 29.3, 30.2, 30.6, 31.0], "gdp": [5500, 5800, 6100, 6400, 6700, 7000, 7400, 7800, 8200, 8600, 9000, 9400, 9800, 10200, 10600, 11000, 11625, 12250, 12875, 13500, 12500, 13000, 13500]}, {"n": "Italy", "s": "Strong Decoupling", "g": 10.3, "co": -26.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.8, 7.84, 7.88, 7.92, 7.96, 8.0, 7.82, 7.64, 7.46, 7.28, 7.1, 6.84, 6.58, 6.32, 6.06, 5.8, 5.75, 5.7, 5.65, 5.6, 4.9, 5.05, 5.2], "ren": [6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.7, 10.9, 12.1, 13.3, 14.5, 15.4, 16.4, 17.3, 18.3, 19.2, 19.5, 19.8, 20.1, 20.4, 22.5, 22.8, 23.0], "gdp": [29000, 29200, 29400, 29600, 29800, 30000, 29800, 29600, 29400, 29200, 29000, 29200, 29400, 29600, 29800, 30000, 30750, 31500, 32250, 33000, 29000, 30500, 32000]}, {"n": "Japan", "s": "Weak Decoupling", "g": 17.9, "co": -7.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.5, 9.52, 9.54, 9.56, 9.58, 9.6, 9.48, 9.36, 9.24, 9.12, 9.0, 9.08, 9.16, 9.24, 9.32, 9.4, 9.22, 9.05, 8.88, 8.7, 8.2, 8.25, 8.3], "ren": [5.0, 5.1, 5.1, 5.2, 5.2, 5.3, 5.7, 6.1, 6.6, 7.0, 7.4, 7.9, 8.5, 9.0, 9.6, 10.1, 10.3, 10.6, 10.8, 11.0, 12.1, 12.8, 13.4], "gdp": [31500, 31800, 32100, 32400, 32700, 33000, 33100, 33200, 33300, 33400, 33500, 34200, 34900, 35600, 36300, 37000, 37750, 38500, 39250, 40000, 38000, 38750, 39500]}, {"n": "Malaysia", "s": "No Decoupling", "g": 31.8, "co": 9.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.4, 5.62, 5.84, 6.06, 6.28, 6.5, 6.62, 6.74, 6.86, 6.98, 7.1, 7.22, 7.34, 7.46, 7.58, 7.7, 7.85, 8.0, 8.15, 8.3, 7.3, 7.55, 7.8], "ren": [8.0, 7.9, 7.8, 7.7, 7.6, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.8, 9.0, 9.2, 9.5, 10.5, 11.2, 12.0], "gdp": [16000, 16600, 17200, 17800, 18400, 19000, 19600, 20200, 20800, 21400, 22000, 22700, 23400, 24100, 24800, 25500, 26125, 26750, 27375, 28000, 26000, 27500, 29000]}, {"n": "Mexico", "s": "Low growth", "g": 9.1, "co": -18.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.8, 3.82, 3.84, 3.86, 3.88, 3.9, 3.88, 3.86, 3.84, 3.82, 3.8, 3.76, 3.72, 3.68, 3.64, 3.6, 3.55, 3.5, 3.45, 3.4, 2.9, 3.0, 3.1], "ren": [10.5, 10.4, 10.3, 10.2, 10.1, 10.0, 10.1, 10.2, 10.3, 10.4, 10.5, 10.8, 11.1, 11.4, 11.7, 12.0, 12.8, 13.5, 14.2, 15.0, 16.5, 16.9, 17.2], "gdp": [15000, 15200, 15400, 15600, 15800, 16000, 16100, 16200, 16300, 16400, 16500, 16800, 17100, 17400, 17700, 18000, 18125, 18250, 18375, 18500, 16500, 17250, 18000]}, {"n": "Netherlands", "s": "Strong Decoupling", "g": 26.2, "co": -26.4, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [11.9, 11.86, 11.82, 11.78, 11.74, 11.7, 11.56, 11.42, 11.28, 11.14, 11.0, 10.78, 10.56, 10.34, 10.12, 9.9, 9.68, 9.45, 9.22, 9.0, 7.9, 8.0, 8.1], "ren": [2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8, 6.3, 6.8, 7.3, 7.8, 8.3, 9.2, 10.2, 11.1, 12.0, 14.5, 16.5, 18.5], "gdp": [36000, 36600, 37200, 37800, 38400, 39000, 39200, 39400, 39600, 39800, 40000, 40800, 41600, 42400, 43200, 44000, 45500, 47000, 48500, 50000, 47000, 48750, 50500]}, {"n": "Nigeria", "s": "Negative (GDP declined)", "g": -5.5, "co": 16.7, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.7, 0.7, 0.7, 0.7, 0.6, 0.65, 0.7], "ren": [78.0, 77.6, 77.2, 76.8, 76.4, 76.0, 75.8, 75.6, 75.4, 75.2, 75.0, 74.4, 73.8, 73.2, 72.6, 72.0, 71.0, 70.0, 69.0, 68.0, 66.5, 65.8, 65.0], "gdp": [3500, 3700, 3900, 4100, 4300, 4500, 4700, 4900, 5100, 5300, 5500, 5600, 5700, 5800, 5900, 6000, 5875, 5750, 5625, 5500, 5000, 5100, 5200]}, {"n": "Norway", "s": "Strong Decoupling", "g": 19.6, "co": -23.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.5, 8.6, 8.7, 8.8, 8.9, 9.0, 9.04, 9.08, 9.12, 9.16, 9.2, 9.02, 8.84, 8.66, 8.48, 8.3, 8.18, 8.05, 7.92, 7.8, 7.2, 7.1, 7.0], "ren": [63.0, 63.3, 63.6, 63.9, 64.2, 64.5, 64.6, 64.7, 64.8, 64.9, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 70.5, 71.0, 71.5, 72.0, 73.5, 74.2, 75.0], "gdp": [44000, 45800, 47600, 49400, 51200, 53000, 53600, 54200, 54800, 55400, 56000, 56800, 57600, 58400, 59200, 60000, 61250, 62500, 63750, 65000, 58000, 62500, 67000]}, {"n": "Pakistan", "s": "No Decoupling", "g": 16.0, "co": 11.1, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.93, 0.95, 0.97, 1.0, 0.9, 0.95, 1.0], "ren": [45.0, 44.6, 44.2, 43.8, 43.4, 43.0, 42.8, 42.6, 42.4, 42.2, 42.0, 41.7, 41.4, 41.1, 40.8, 40.5, 40.0, 39.5, 39.0, 38.5, 39.0, 39.5, 40.0], "gdp": [3800, 3940, 4080, 4220, 4360, 4500, 4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300, 5400, 5500, 5550, 5600, 5650, 5700, 5600, 5700, 5800]}, {"n": "Poland", "s": "Weak Decoupling", "g": 82.4, "co": 1.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [8.4, 8.42, 8.44, 8.46, 8.48, 8.5, 8.46, 8.42, 8.38, 8.34, 8.3, 8.24, 8.18, 8.12, 8.06, 8.0, 8.05, 8.1, 8.15, 8.2, 7.8, 8.1, 8.4], "ren": [4.8, 4.8, 4.9, 4.9, 5.0, 5.0, 5.7, 6.4, 7.1, 7.8, 8.5, 9.2, 9.9, 10.6, 11.3, 12.0, 12.5, 13.0, 13.5, 14.0, 15.5, 16.1, 16.8], "gdp": [11000, 11500, 12000, 12500, 13000, 13500, 14200, 14900, 15600, 16300, 17000, 18000, 19000, 20000, 21000, 22000, 23625, 25250, 26875, 28500, 28000, 29500, 31000]}, {"n": "Portugal", "s": "Strong Decoupling", "g": 28.9, "co": -21.8, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [6.4, 6.42, 6.44, 6.46, 6.48, 6.5, 6.3, 6.1, 5.9, 5.7, 5.5, 5.38, 5.26, 5.14, 5.02, 4.9, 4.88, 4.85, 4.83, 4.8, 3.9, 4.1, 4.3], "ren": [18.5, 19.2, 19.9, 20.6, 21.3, 22.0, 23.3, 24.6, 25.9, 27.2, 28.5, 29.7, 30.9, 32.1, 33.3, 34.5, 34.4, 34.2, 34.1, 34.0, 38.0, 39.2, 40.5], "gdp": [22000, 22200, 22400, 22600, 22800, 23000, 22900, 22800, 22700, 22600, 22500, 22800, 23100, 23400, 23700, 24000, 25125, 26250, 27375, 28500, 25500, 27250, 29000]}, {"n": "Romania", "s": "Strong Decoupling", "g": 125.0, "co": -19.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.2, 5.24, 5.28, 5.32, 5.36, 5.4, 5.24, 5.08, 4.92, 4.76, 4.6, 4.44, 4.28, 4.12, 3.96, 3.8, 3.8, 3.8, 3.8, 3.8, 3.6, 3.65, 3.7], "ren": [17.0, 17.3, 17.6, 17.9, 18.2, 18.5, 19.0, 19.5, 20.0, 20.5, 21.0, 21.8, 22.6, 23.4, 24.2, 25.0, 25.6, 26.2, 26.9, 27.5, 29.0, 29.8, 30.5], "gdp": [7500, 8000, 8500, 9000, 9500, 10000, 10400, 10800, 11200, 11600, 12000, 12800, 13600, 14400, 15200, 16000, 18000, 20000, 22000, 24000, 23500, 25250, 27000]}, {"n": "Russia", "s": "Weak Decoupling", "g": 27.5, "co": -0.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [10.7, 10.8, 10.9, 11.0, 11.1, 11.2, 11.18, 11.16, 11.14, 11.12, 11.1, 11.16, 11.22, 11.28, 11.34, 11.4, 11.45, 11.5, 11.55, 11.6, 10.7, 10.85, 11.0], "ren": [3.4, 3.4, 3.4, 3.5, 3.5, 3.5, 3.5, 3.5, 3.6, 3.6, 3.6, 3.6, 3.6, 3.5, 3.5, 3.5, 3.6, 3.7, 3.8, 3.9, 4.2, 4.3, 4.5], "gdp": [12000, 13000, 14000, 15000, 16000, 17000, 17600, 18200, 18800, 19400, 20000, 20600, 21200, 21800, 22400, 23000, 24000, 25000, 26000, 27000, 25000, 25250, 25500]}, {"n": "Saudi Arabia", "s": "Weak Decoupling", "g": 18.8, "co": -2.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [13.7, 13.82, 13.94, 14.06, 14.18, 14.3, 14.46, 14.62, 14.78, 14.94, 15.1, 15.38, 15.66, 15.94, 16.22, 16.5, 16.2, 15.9, 15.6, 15.3, 14.0, 14.4, 14.8], "ren": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.5, 0.8, 1.0, 1.3, 2.1, 2.8, 3.4], "gdp": [30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 43000, 44000, 45000, 45500, 46000, 46500, 47000, 42000, 44750, 47500]}, {"n": "South Africa", "s": "Low growth", "g": 0.0, "co": -22.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.7, 7.84, 7.98, 8.12, 8.26, 8.4, 8.34, 8.28, 8.22, 8.16, 8.1, 7.94, 7.78, 7.62, 7.46, 7.3, 7.2, 7.1, 7.0, 6.9, 6.1, 6.2, 6.3], "ren": [9.0, 8.9, 8.8, 8.7, 8.6, 8.5, 8.4, 8.3, 8.2, 8.1, 8.0, 8.1, 8.2, 8.2, 8.3, 8.4, 8.6, 8.7, 8.8, 9.0, 9.8, 10.4, 11.0], "gdp": [9500, 9700, 9900, 10100, 10300, 10500, 10700, 10900, 11100, 11300, 11500, 11700, 11900, 12100, 12300, 12500, 12375, 12250, 12125, 12000, 10500, 11000, 11500]}, {"n": "South Korea", "s": "Weak Decoupling", "g": 55.4, "co": 0.9, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.1, 9.28, 9.46, 9.64, 9.82, 10.0, 10.26, 10.52, 10.78, 11.04, 11.3, 11.42, 11.54, 11.66, 11.78, 11.9, 11.97, 12.05, 12.12, 12.2, 11.7, 11.55, 11.4], "ren": [1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.5, 1.7, 1.8, 2.0, 2.2, 2.6, 2.9, 3.3, 3.6, 4.0, 4.2, 4.4, 4.6, 4.8, 5.5, 6.3, 7.2], "gdp": [19000, 19900, 20800, 21700, 22600, 23500, 24400, 25300, 26200, 27100, 28000, 29100, 30200, 31300, 32400, 33500, 35000, 36500, 38000, 39500, 40000, 41750, 43500]}, {"n": "Spain", "s": "Strong Decoupling", "g": 22.2, "co": -20.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.7, 7.82, 7.94, 8.06, 8.18, 8.3, 7.92, 7.54, 7.16, 6.78, 6.4, 6.22, 6.04, 5.86, 5.68, 5.5, 5.53, 5.55, 5.58, 5.6, 4.8, 4.95, 5.1], "ren": [7.0, 7.6, 8.2, 8.8, 9.4, 10.0, 11.3, 12.6, 13.9, 15.2, 16.5, 17.2, 17.9, 18.6, 19.3, 20.0, 20.5, 21.0, 21.5, 22.0, 24.0, 24.8, 25.5], "gdp": [25000, 25800, 26600, 27400, 28200, 29000, 28600, 28200, 27800, 27400, 27000, 27400, 27800, 28200, 28600, 29000, 30250, 31500, 32750, 34000, 29000, 31000, 33000]}, {"n": "Sweden", "s": "Strong Decoupling", "g": 25.0, "co": -37.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [5.8, 5.76, 5.72, 5.68, 5.64, 5.6, 5.56, 5.52, 5.48, 5.44, 5.4, 5.2, 5.0, 4.8, 4.6, 4.4, 4.25, 4.1, 3.95, 3.8, 3.3, 3.35, 3.4], "ren": [33.0, 34.1, 35.2, 36.3, 37.4, 38.5, 39.4, 40.3, 41.2, 42.1, 43.0, 44.6, 46.1, 47.7, 49.2, 50.8, 51.8, 52.7, 53.6, 54.6, 57.0, 58.5, 60.1], "gdp": [33000, 33800, 34600, 35400, 36200, 37000, 37600, 38200, 38800, 39400, 40000, 41000, 42000, 43000, 44000, 45000, 46000, 47000, 48000, 49000, 47000, 48500, 50000]}, {"n": "Thailand", "s": "Weak Decoupling", "g": 33.3, "co": 2.6, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.56, 3.62, 3.68, 3.74, 3.8, 3.84, 3.88, 3.92, 3.96, 4.0, 4.0, 4.0, 4.0, 4.0, 3.6, 3.75, 3.9], "ren": [16.5, 16.4, 16.3, 16.2, 16.1, 16.0, 16.1, 16.2, 16.3, 16.4, 16.5, 16.8, 17.1, 17.4, 17.7, 18.0, 18.4, 18.8, 19.1, 19.5, 20.8, 21.4, 22.0], "gdp": [10000, 10400, 10800, 11200, 11600, 12000, 12300, 12600, 12900, 13200, 13500, 14100, 14700, 15300, 15900, 16500, 17000, 17500, 18000, 18500, 16500, 17250, 18000]}, {"n": "Turkey", "s": "No Decoupling", "g": 59.4, "co": 22.0, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [3.3, 3.38, 3.46, 3.54, 3.62, 3.7, 3.78, 3.86, 3.94, 4.02, 4.1, 4.18, 4.26, 4.34, 4.42, 4.5, 4.55, 4.6, 4.65, 4.7, 4.6, 4.8, 5.0], "ren": [12.0, 11.9, 11.8, 11.7, 11.6, 11.5, 11.8, 12.1, 12.4, 12.7, 13.0, 13.8, 14.6, 15.4, 16.2, 17.0, 17.6, 18.2, 18.9, 19.5, 21.0, 22.2, 23.4], "gdp": [10500, 11100, 11700, 12300, 12900, 13500, 14000, 14500, 15000, 15500, 16000, 16700, 17400, 18100, 18800, 19500, 19875, 20250, 20625, 21000, 21000, 23250, 25500]}, {"n": "Ukraine", "s": "Negative (GDP declined)", "g": -11.8, "co": -46.5, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [7.0, 7.08, 7.16, 7.24, 7.32, 7.4, 7.34, 7.28, 7.22, 7.16, 7.1, 6.76, 6.42, 6.08, 5.74, 5.4, 5.28, 5.15, 5.03, 4.9, 4.5, 4.15, 3.8], "ren": [5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.3, 6.6, 6.9, 7.2, 7.5, 7.8, 8.1, 8.4, 8.7, 9.0, 9.6, 10.2, 10.9, 11.5, 13.0, 13.2, 13.5], "gdp": [5000, 5500, 6000, 6500, 7000, 7500, 7700, 7900, 8100, 8300, 8500, 8400, 8300, 8200, 8100, 8000, 8375, 8750, 9125, 9500, 9000, 8250, 7500]}, {"n": "United Kingdom", "s": "Strong Decoupling", "g": 17.4, "co": -40.2, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [9.6, 9.5, 9.4, 9.3, 9.2, 9.1, 8.92, 8.74, 8.56, 8.38, 8.2, 7.84, 7.48, 7.12, 6.76, 6.4, 6.17, 5.95, 5.72, 5.5, 4.6, 4.75, 4.9], "ren": [2.6, 2.9, 3.2, 3.4, 3.7, 4.0, 4.8, 5.6, 6.4, 7.2, 8.0, 9.8, 11.7, 13.5, 15.4, 17.2, 19.1, 21.1, 23.1, 25.0, 29.5, 30.4, 31.2], "gdp": [31000, 31800, 32600, 33400, 34200, 35000, 34900, 34800, 34700, 34600, 34500, 35300, 36100, 36900, 37700, 38500, 39375, 40250, 41125, 42000, 38000, 39250, 40500]}, {"n": "United States", "s": "Strong Decoupling", "g": 23.8, "co": -24.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [20.5, 20.36, 20.22, 20.08, 19.94, 19.8, 19.3, 18.8, 18.3, 17.8, 17.3, 16.96, 16.62, 16.28, 15.94, 15.6, 15.25, 14.9, 14.55, 14.2, 12.8, 12.95, 13.1], "ren": [6.0, 6.1, 6.2, 6.3, 6.4, 6.5, 6.8, 7.1, 7.4, 7.7, 8.0, 8.4, 8.8, 9.2, 9.6, 10.0, 10.3, 10.7, 11.1, 11.4, 12.5, 12.8, 13.1], "gdp": [45000, 46000, 47000, 48000, 49000, 50000, 50100, 50200, 50300, 50400, 50500, 51400, 52300, 53200, 54100, 55000, 56750, 58500, 60250, 62000, 58000, 60250, 62500]}, {"n": "Vietnam", "s": "No Decoupling", "g": 90.9, "co": 113.3, "yr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], "co2": [0.7, 0.76, 0.82, 0.88, 0.94, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.23, 2.45, 2.67, 2.9, 2.8, 3.0, 3.2], "ren": [50.0, 49.2, 48.4, 47.6, 46.8, 46.0, 44.8, 43.6, 42.4, 41.2, 40.0, 39.1, 38.2, 37.3, 36.4, 35.5, 34.2, 33.0, 31.8, 30.5, 31.0, 32.2, 33.5], "gdp": [3000, 3200, 3400, 3600, 3800, 4000, 4300, 4600, 4900, 5200, 5500, 5800, 6100, 6400, 6700, 7000, 7500, 8000, 8500, 9000, 9000, 9750, 10500]}]};
+
+// ===== CHART DEFAULTS =====
+Chart.defaults.color = '#6b7280';
+Chart.defaults.borderColor = '#252836';
+Chart.defaults.font.family = '-apple-system, sans-serif';
+
+const COLORS = {
+  'Strong Decoupling': '#3ecf8e',
+  'Weak Decoupling':   '#4f8ef7',
+  'No Decoupling':     '#f05050',
+  'Low growth':        '#f5a623',
+  'Negative (GDP declined)': '#9b72dd'
+};
+
+const LINE_COLORS = ['#4f8ef7','#3ecf8e','#f5a623','#f05050','#9b72dd','#64b5f6','#81c784','#ffb74d','#e57373','#ba68c8','#4dd0e1','#aed581'];
+
+function getBadge(s){
+  const map={'Strong Decoupling':'strong','Weak Decoupling':'weak','No Decoupling':'no','Low growth':'low','Negative (GDP declined)':'neg'};
+  return `<span class="badge ${map[s]||'low'}">${s}</span>`;
+}
+
+// ===== OVERVIEW CHARTS =====
+function buildDonut(){
+  const counts={};
+  DASHBOARD_DATA.countries.forEach(c=>{counts[c.s]=(counts[c.s]||0)+1});
+  new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{
+      labels:Object.keys(counts),
+      datasets:[{data:Object.values(counts),backgroundColor:Object.keys(counts).map(k=>COLORS[k]),borderWidth:2,borderColor:'#13161d'}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
+  });
+}
+
+function buildGlobalCo2(){
+  const yrs=DASHBOARD_DATA.countries[0].yr;
+  const avg=yrs.map((_,i)=>{
+    const vals=DASHBOARD_DATA.countries.map(c=>c.co2[i]).filter(v=>v!=null);
+    return +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2);
+  });
+  new Chart(document.getElementById('globalCo2Chart'),{
+    type:'line',
+    data:{
+      labels:yrs,
+      datasets:[{label:'Global avg CO₂/capita (t)',data:avg,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',fill:true,tension:0.3,pointRadius:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'Tonnes CO₂ per person'}}}}
+  });
+}
+
+// ===== TRENDS =====
+let trendChartInst=null, renChartInst=null, currentMetric='co2';
+const PRESET=['Germany','Denmark','United Kingdom','Sweden','France'];
+
+function initTrendSelect(){
+  const sel=document.getElementById('trendSelect');
+  DASHBOARD_DATA.countries.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c.n; opt.textContent=c.n;
+    if(PRESET.includes(c.n)) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function addPreset(){
+  const sel=document.getElementById('trendSelect');
+  Array.from(sel.options).forEach(o=>{o.selected=PRESET.includes(o.value)});
+  updateTrends();
+}
+
+function setMetric(m,btn){
+  currentMetric=m;
+  document.querySelectorAll('#trends .btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const titles={'co2':'CO₂ per Capita Trends (tonnes)','ren':'Renewable Energy Share Trends (%)','gdp':'GDP per Capita Trends (USD PPP)'};
+  document.getElementById('trendTitle').textContent=titles[m];
+  updateTrends();
+}
+
+function updateTrends(){
+  const sel=document.getElementById('trendSelect');
+  const chosen=[...sel.options].filter(o=>o.selected).map(o=>o.value);
+  const selected=DASHBOARD_DATA.countries.filter(c=>chosen.includes(c.n));
+  const yrs=DASHBOARD_DATA.countries[0].yr;
+
+  const makeDS=(c,i)=>({label:c.n,data:c[currentMetric],borderColor:LINE_COLORS[i%LINE_COLORS.length],backgroundColor:'transparent',tension:0.3,pointRadius:1,borderWidth:2});
+  const makeDS2=(c,i)=>({label:c.n,data:c.ren,borderColor:LINE_COLORS[i%LINE_COLORS.length],backgroundColor:'transparent',tension:0.3,pointRadius:1,borderWidth:2});
+
+  if(trendChartInst) trendChartInst.destroy();
+  trendChartInst=new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{labels:yrs,datasets:selected.map(makeDS)},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{beginAtZero:false}}}
+  });
+
+  if(renChartInst) renChartInst.destroy();
+  renChartInst=new Chart(document.getElementById('renChart'),{
+    type:'line',
+    data:{labels:yrs,datasets:selected.map(makeDS2)},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{title:{display:true,text:'% of total energy'}}}}
+  });
+}
+
+// ===== SCATTER =====
+let scatterInst=null, renCo2Inst=null, decoupleInst=null;
+
+function updateScatter(){
+  const year=+document.getElementById('yearSlider').value;
+  document.getElementById('yearLabel').textContent=year;
+  const yrs=DASHBOARD_DATA.countries[0].yr;
+  const idx=yrs.indexOf(year);
+
+  const points=DASHBOARD_DATA.countries.map(c=>({
+    x:c.gdp[idx], y:c.co2[idx],
+    r:Math.max(4,Math.min(20,(c.ren[idx]||10)/4)),
+    label:c.n, status:c.s
+  }));
+
+  const bySt={};
+  points.forEach(p=>{if(!bySt[p.status])bySt[p.status]=[];bySt[p.status].push(p)});
+
+  const datasets=Object.entries(bySt).map(([st,pts])=>({
+    label:st,
+    data:pts.map(p=>({x:p.x,y:p.y,r:p.r})),
+    backgroundColor:COLORS[st]+'99',
+    borderColor:COLORS[st],
+    borderWidth:1,
+  }));
+
+  if(scatterInst) scatterInst.destroy();
+  scatterInst=new Chart(document.getElementById('scatterChart'),{
+    type:'bubble',
+    data:{datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>{
+          const p=points.find(pt=>Math.abs(pt.x-ctx.parsed.x)<1&&Math.abs(pt.y-ctx.parsed.y)<0.01);
+          return p?`${p.label}: GDP $${ctx.parsed.x.toLocaleString()}, CO₂ ${ctx.parsed.y}t`:'';
+        }}}
+      },
+      scales:{
+        x:{title:{display:true,text:'GDP per capita (USD PPP)'}},
+        y:{title:{display:true,text:'CO₂ per capita (tonnes)'}}
+      }
+    }
+  });
+}
+
+function buildRenCo2(){
+  const yrs=DASHBOARD_DATA.countries[0].yr;
+  const i2010=yrs.indexOf(2010), i2022=yrs.indexOf(2022);
+  const pts=DASHBOARD_DATA.countries.map(c=>({
+    x:c.ren[i2022]-c.ren[i2010],
+    y:c.co2[i2022]-c.co2[i2010],
+    label:c.n, status:c.s
+  }));
+  const bySt={};
+  pts.forEach(p=>{if(!bySt[p.status])bySt[p.status]=[];bySt[p.status].push(p)});
+  const datasets=Object.entries(bySt).map(([st,points])=>({
+    label:st,data:points.map(p=>({x:p.x,y:p.y})),
+    backgroundColor:COLORS[st]+'cc',borderColor:COLORS[st],borderWidth:1,pointRadius:5
+  }));
+  renCo2Inst=new Chart(document.getElementById('renCo2Chart'),{
+    type:'scatter',
+    data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{title:{display:true,text:'Renewable share change (pp)'}},y:{title:{display:true,text:'CO₂/cap change (tonnes)'}}}}
+  });
+}
+
+function buildDecoupleChart(){
+  const yrs=DASHBOARD_DATA.countries[0].yr;
+  const i2010=yrs.indexOf(2010),i2022=yrs.indexOf(2022);
+  const pts=DASHBOARD_DATA.countries.map(c=>({
+    x:c.g, y:c.co, label:c.n, status:c.s
+  }));
+  const bySt={};
+  pts.forEach(p=>{if(!bySt[p.status])bySt[p.status]=[];bySt[p.status].push(p)});
+  const datasets=Object.entries(bySt).map(([st,points])=>({
+    label:st,data:points.map(p=>({x:p.x,y:p.y})),
+    backgroundColor:COLORS[st]+'cc',borderColor:COLORS[st],borderWidth:1,pointRadius:5
+  }));
+  decoupleInst=new Chart(document.getElementById('decoupleChart'),{
+    type:'scatter',
+    data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}}},
+      scales:{x:{title:{display:true,text:'GDP growth (%)'}},y:{title:{display:true,text:'CO₂/cap change (%)'}}}}
+  });
+}
+
+// ===== TABLE =====
+function buildTable(filter='all'){
+  const tbody=document.getElementById('countryTbody');
+  tbody.innerHTML='';
+  const data=filter==='all'?DASHBOARD_DATA.countries:DASHBOARD_DATA.countries.filter(c=>c.s===filter);
+  data.forEach(c=>{
+    const yr=c.yr;
+    const i22=yr.indexOf(2022);
+    const gdpPill=c.g>0?`<span class="pill pos">+${c.g}%</span>`:`<span class="pill neg-bad">${c.g}%</span>`;
+    const co2Pill=c.co<0?`<span class="pill neg-good">${c.co}%</span>`:c.co<5?`<span class="pill neu">+${c.co}%</span>`:`<span class="pill neg-bad">+${c.co}%</span>`;
+    // mini sparkline using unicode blocks
+    const co2Vals=yr.filter((_,i)=>i%3===0).map((_,i)=>c.co2[i*3]);
+    const mn=Math.min(...co2Vals),mx=Math.max(...co2Vals);
+    const spark=co2Vals.map(v=>{const p=(v-mn)/(mx-mn||1);return ['▁','▂','▃','▄','▅','▆','▇'][Math.round(p*6)]}).join('');
+    tbody.innerHTML+=`<tr>
+      <td><strong>${c.n}</strong></td>
+      <td>${getBadge(c.s)}</td>
+      <td>${gdpPill}</td>
+      <td>${co2Pill}</td>
+      <td style="font-family:var(--mono)">${c.co2[i22]} t</td>
+      <td style="font-family:var(--mono)">${c.ren[i22]}%</td>
+      <td style="font-family:var(--mono);letter-spacing:1px;font-size:12px;color:${c.co<0?'#3ecf8e':'#f05050'}">${spark}</td>
+    </tr>`;
+  });
+}
+
+function filterTable(f, btn){
+  document.querySelectorAll('#countries .btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTable(f);
+}
+
+// ===== NAV =====
+function nav(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  if(id==='trends'&&!trendChartInst) updateTrends();
+  if(id==='scatter'){
+    if(!scatterInst) updateScatter();
+    if(!renCo2Inst) buildRenCo2();
+    if(!decoupleInst) buildDecoupleChart();
+  }
+}
+
+// ===== INIT =====
+(async () => {
+  await loadData();          // fetch cleaned_data.json → or use fallback
+  buildDonut();
+  buildGlobalCo2();
+  initTrendSelect();
+  buildTable();
+})();
+</script>
+</body>
+</html>

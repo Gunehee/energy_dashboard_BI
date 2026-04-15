@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Energy Dashboard — 꼬리물기 면접 대비</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#0e0f14;--s:#161820;--s2:#1e2028;--bd:#2a2d3a;--ac:#4f8ef7;--g:#3ecf8e;--am:#f5a623;--r:#f05050;--p:#9b72dd;--t:#e8eaf0;--dim:#8a8fa8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t);font-family:'Noto Sans KR',sans-serif;font-weight:300;line-height:1.8}
+.hero{background:linear-gradient(135deg,#0d1420,#111520,#0c1018);border-bottom:1px solid var(--bd);padding:44px 48px 36px}
+.hero-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--g);margin-bottom:12px}
+.hero h1{font-size:26px;font-weight:700;margin-bottom:8px}
+.hero h1 span{color:var(--ac)}
+.hero-sub{font-size:13px;color:var(--dim)}
+.wrap{max-width:860px;margin:0 auto;padding:40px 32px 80px}
+.cat-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:32px}
+.cat-btn{padding:7px 16px;border:1px solid var(--bd);border-radius:20px;font-size:12px;color:var(--dim);background:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.cat-btn:hover,.cat-btn.active{background:rgba(79,142,247,.12);border-color:var(--ac);color:var(--ac)}
+.cat-section{display:none}
+.cat-section.active{display:block}
+.cat-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:20px}
+.qa{background:var(--s);border:1px solid var(--bd);border-radius:12px;margin-bottom:18px;overflow:hidden}
+.qa-q{background:var(--s2);padding:16px 22px;font-size:14px;font-weight:700;color:var(--ac);display:flex;gap:12px;align-items:flex-start}
+.qa-q::before{content:'Q';font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--ac);color:#000;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-weight:700}
+.qa-a{padding:20px 24px;font-size:14px;line-height:1.95;color:var(--t)}
+.qa-a p+p{margin-top:12px}
+.kw{color:var(--g);font-weight:500}
+.em{color:var(--ac);font-weight:500}
+.tip{background:rgba(124,92,191,.1);border-left:3px solid var(--p);padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#c4a8ff;margin-top:12px;line-height:1.75}
+.warn{background:rgba(245,166,35,.08);border-left:3px solid var(--am);padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#f5c070;margin-top:12px;line-height:1.75}
+.code{background:var(--s2);padding:12px 16px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--g);margin-top:12px;line-height:1.8;overflow-x:auto}
+h3{font-size:14px;font-weight:600;color:var(--ac);margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-label">Deep Interview Prep · Energy & Sustainability Dashboard</div>
+  <h1>꼬리물기 질문 <span>완전 대비</span></h1>
+  <p class="hero-sub">면접관이 이 프로젝트를 메인으로 파고들 때 — 방법론, 데이터, 코드, 한계, 비즈니스 연결까지 모든 각도 대비</p>
+</div>
+<div class="wrap">
+<div class="cat-nav">
+  <button class="cat-btn active" onclick="show('method',this)">방법론 & 설계</button>
+  <button class="cat-btn" onclick="show('data',this)">데이터 & 전처리</button>
+  <button class="cat-btn" onclick="show('code',this)">코드 & 기술</button>
+  <button class="cat-btn" onclick="show('findings',this)">분석 결과</button>
+  <button class="cat-btn" onclick="show('limits',this)">한계 & 개선점</button>
+  <button class="cat-btn" onclick="show('biz',this)">비즈니스 연결</button>
+</div>
+
+<!-- ===== 방법론 ===== -->
+<div id="method" class="cat-section active">
+  <div class="cat-title">방법론 & 설계 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">왜 KPI를 데이터 수집 전에 먼저 정의했나요?</div>
+    <div class="qa-a">
+      <p>데이터를 먼저 보고 지표를 고르면 결과에 유리한 지표만 선택하는 <span class="kw">post-hoc selection bias</span>가 발생합니다. 예를 들어 특정 나라가 절대 배출량은 줄었지만 1인당은 늘었다면, 어느 기준을 쓰느냐에 따라 "성공" 혹은 "실패"로 정반대 결론이 나옵니다.</p>
+      <p>저는 분석을 시작하기 전에 핵심 질문 — "경제 성장과 탄소 감소를 동시에 달성할 수 있는가" — 을 먼저 고정하고, 이 질문에 답하는 데 <span class="em">최소한으로 필요한</span> 세 개의 지표만 정의했습니다. 그 뒤에 데이터를 수집했고, 지표 정의를 다시 바꾸지 않았습니다. 이 결정 로그를 README에 남겨서 누구든 검증할 수 있게 했습니다.</p>
+      <div class="tip">이 대답은 "분석 전에 기준을 세우는 습관"이라는 강점과 완벽히 연결됩니다. 컨포트랩에서 PORTA KPI를 설계할 때도 같은 원칙을 쓰겠다고 연결하세요.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">왜 1인당(per capita) 기준을 썼나요? 절대값(absolute)을 쓰면 안 되나요?</div>
+    <div class="qa-a">
+      <p>절대값을 쓰면 두 가지 오류가 생깁니다. 첫째, <span class="kw">인구 효과</span>가 섞입니다. 독일이 탄소를 줄인 것처럼 보여도 인구가 줄어서 그럴 수 있습니다. 둘째, <span class="kw">경제 규모 편향</span>이 생깁니다. 인도가 절대 배출량이 크다는 것이 1인당 기준에서는 완전히 다른 그림을 줍니다 — 인도의 CO₂/인은 2022년 기준 2.0t으로 미국(13.1t)의 15%에 불과합니다.</p>
+      <p>이 프로젝트의 핵심 질문이 "구조적 전환이 일어났는가"이기 때문에 인구 변화와 경제 규모를 통제하는 1인당 기준이 맞는 선택이었습니다. 단, 절대 배출량 감소도 중요하기 때문에 이 지표를 쓰지 않은 것은 문서화된 한계로 명시했습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">왜 2010년을 decoupling 기준 연도로 설정했나요?</div>
+    <div class="qa-a">
+      <p>2008년 금융위기 때 전 세계 경제가 위축되면서 CO₂ 배출이 일시적으로 감소했습니다. 이건 구조적 변화가 아니라 경기 사이클 효과입니다. 2008년이나 2009년을 기준으로 쓰면 이 일시적 감소가 "decoupling"으로 분류될 수 있습니다.</p>
+      <p>2010년은 금융위기 이후 경제가 회복된 시점으로, 이후 관찰되는 배출 감소는 실제 에너지 믹스 전환, 효율 향상, 산업구조 변화에 의한 것으로 볼 수 있습니다. 이 기준 선택도 README에 명시했고, 2005년이나 2012년을 기준으로 했을 때 결과가 어떻게 달라지는지도 체크했습니다 — 강한 decoupler 국가들은 어느 기준을 써도 결과가 안정적이었습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">"Strong Decoupling" 기준을 GDP +10%, CO₂ -10%로 잡은 근거가 있나요? 임의적인 것 아닌가요?</div>
+    <div class="qa-a">
+      <p>맞습니다, 이 임계값은 어느 정도 임의적입니다. 그래서 이 선택을 숨기지 않고 명시적으로 문서화했고, <span class="kw">sensitivity analysis</span>도 했습니다. ±5%, ±15% 기준으로 바꿔봤을 때 강한 decoupler 국가들의 패턴은 달라지지 않았습니다 — 덴마크, 영국, 스웨덴은 어떤 기준에서도 선두권이었습니다.</p>
+      <p>10% 기준을 선택한 이유는 GDP 측면에서 "의미 있는 경제 성장"의 최소선을 나타내고, CO₂ 측면에서 통계적 노이즈와 구조적 변화를 구분하는 적절한 경계로 판단했기 때문입니다. 더 엄밀한 분석에서는 통계적 검정을 통해 임계값을 결정하겠지만, 이 프로젝트는 BI/시각화 목적이었기 때문에 해석 가능한 임계값을 선택하고 한계를 명시하는 방향을 택했습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 데이터 ===== -->
+<div id="data" class="cat-section">
+  <div class="cat-title">데이터 & 전처리 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">데이터를 어떻게 수집했나요? 직접 API를 쓴 건가요?</div>
+    <div class="qa-a">
+      <p>두 개의 공개 소스에서 직접 수집했습니다.</p>
+      <p>CO₂와 재생에너지 데이터는 <span class="kw">Our World in Data(OWID)</span>의 GitHub 레포에서 CSV를 직접 받아왔습니다. <code>requests.get('https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv')</code>로 다운로드하고, <code>pandas.read_csv(StringIO(raw))</code>로 파싱합니다. API 키 없이 누구나 접근 가능하고, CC BY 4.0 라이선스입니다.</p>
+      <p>GDP 데이터는 <span class="kw">World Bank REST API</span>를 국가별로 호출했습니다. 엔드포인트는 <code>api.worldbank.org/v2/country/{ISO3}/indicator/NY.GDP.PCAP.PP.KD</code>이고, <code>?format=json&date=2000:2022&per_page=100</code> 파라미터로 40개국 × 23년 데이터를 받았습니다. 역시 인증 키 불필요입니다.</p>
+      <p>재실행 속도를 위해 다운로드 결과는 <code>.cache/</code> 폴더에 저장합니다. 첫 실행에는 네트워크 요청이 필요하지만 이후 실행은 캐시에서 바로 로드됩니다. 최종 산출물인 <code>cleaned_data.json</code>은 GitHub에 커밋해서 대시보드가 별도 서버 없이 데이터를 읽을 수 있게 했습니다.</p>
+      <div class="tip">이 질문이 가장 많이 받는 질문 중 하나입니다. "직접 API 호출 → 파싱 → 정합성 검증 → JSON 출력"의 전체 흐름을 순서대로 설명하면 설득력이 높습니다.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">데이터 소스 두 개(OWID, World Bank)를 합칠 때 정합성 문제가 없었나요?</div>
+    <div class="qa-a">
+      <p>두 가지 주요 정합성 이슈가 있었습니다. 첫째, <span class="kw">국가명 불일치</span>입니다. OWID는 "United States"로, World Bank는 "United States of America"로 기재하는 경우가 있었습니다. 이를 표준 국가명 딕셔너리로 통일했습니다.</p>
+      <p>둘째, <span class="kw">결측 연도 처리</span>입니다. 일부 국가는 특정 연도 데이터가 없어서 선형 보간(linear interpolation)을 사용했습니다. 보간은 인접한 두 연도 사이만 적용했고, 데이터 범위 밖으로 외삽(extrapolation)하지 않았습니다. 결측률이 30% 초과인 국가는 트렌드 분석에서 제외하는 기준을 두었고, 이 결정도 코드 주석으로 문서화했습니다.</p>
+      <div class="tip">이 대답이 "데이터 품질 관리" 경험과 직접 연결됩니다. SSG에서 중복·누락·불일치를 처리한 것과 같은 사고방식입니다.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">GDP를 PPP 기준으로 쓴 이유가 뭔가요? 명목 GDP랑 무슨 차이가 있나요?</div>
+    <div class="qa-a">
+      <p>명목 GDP는 환율 변동과 물가 수준이 그대로 반영됩니다. 예를 들어 인도의 명목 GDP가 낮아 보이는 건 인도 루피가 달러보다 약해서이지, 실제 구매력이 그만큼 낮아서가 아닙니다. 같은 돈으로 인도에서는 미국보다 훨씬 많은 것을 살 수 있습니다.</p>
+      <p><span class="kw">PPP(구매력 평가)</span>는 이 가격 수준 차이를 통제합니다. 40개국을 비교할 때 명목 GDP를 쓰면 고소득 국가와 저소득 국가 간 실제 경제 격차를 과장합니다. 또한 저는 2015년 기준 고정값을 썼는데, 이는 연도 간 비교에서 인플레이션 효과를 제거하기 위해서입니다. "2022년 인도 GDP가 높아진 게 실질 성장인가 인플레이션 때문인가"를 구분해야 decoupling 분석이 의미 있습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">40개 국가를 선택한 기준이 무엇인가요?</div>
+    <div class="qa-a">
+      <p>세 가지 기준으로 선정했습니다. 첫째, <span class="em">G20 전체</span>를 포함했습니다 — 세계 GDP의 85%를 차지하는 국가들이라 분석의 대표성을 확보합니다. 둘째, <span class="em">EU 내 특징적 케이스</span> — 덴마크(풍력 선도), 스웨덴(원자력+바이오매스), 포르투갈(태양광 급성장)처럼 에너지 전환 사례로 의미 있는 국가들을 추가했습니다. 셋째, 인구 100만 명 이상 기준으로 마이크로 스테이트를 제외했습니다 — 룩셈부르크나 아이슬란드는 1인당 기준에서 극단값이라 전체 분석을 왜곡할 수 있습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">보간(interpolation)을 어떻게 했고, 그게 분석에 영향을 미치지 않나요?</div>
+    <div class="qa-a">
+      <p>선형 보간을 사용했습니다. 예를 들어 2010년과 2015년 데이터만 있을 경우, 2011~2014년은 두 값 사이의 균등 분할로 채웠습니다. 이 접근의 한계는 실제 비선형 변화 — 예를 들어 정책 발표 이후 갑작스러운 변화 — 를 놓칠 수 있다는 점입니다.</p>
+      <p>하지만 decoupling 분류는 2010년과 2022년 두 시점만 비교하기 때문에, 그 사이 보간 값은 트렌드 차트에만 영향을 미치고 핵심 분류 결과에는 영향이 없습니다. 트렌드 차트에서는 실측 데이터 포인트와 보간 구간을 시각적으로 구분하는 개선점을 다음 버전에서 추가할 예정입니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 코드 ===== -->
+<div id="code" class="cat-section">
+  <div class="cat-title">코드 & 기술 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">data_pipeline.py 코드를 설명해주세요. 어떤 구조로 짰나요?</div>
+    <div class="qa-a">
+      <p>5단계 파이프라인으로 구성했습니다. 핵심은 데이터를 <span class="kw">두 개의 실제 외부 소스에서 직접 받아온다</span>는 점입니다.</p>
+      <p><span class="kw">1단계: 데이터 수집</span> — CO₂와 재생에너지는 <code>Our World in Data</code>의 GitHub 레포에서 CSV를 직접 다운로드합니다 (<code>requests.get(OWID_URL)</code> → <code>pandas.read_csv(StringIO(raw))</code>). GDP는 <code>World Bank REST API</code>를 국가별로 호출해 JSON으로 받습니다 (<code>NY.GDP.PCAP.PP.KD</code> 인디케이터, 2017 USD PPP). 두 소스 모두 인증 키 불필요, CC BY 4.0 라이선스. 다운로드는 <code>.cache/</code> 폴더에 캐싱해서 두 번째 실행부터는 네트워크 호출 없이 처리됩니다.</p>
+      <p><span class="kw">2단계: 연도 보간</span> — <code>fill_missing_years()</code>가 연간 데이터를 2000~2022년 전체로 채웁니다. 인접한 두 데이터 포인트 사이만 선형 보간하고, 데이터 범위 밖 외삽은 하지 않았습니다.</p>
+      <p><span class="kw">3단계: 데이터 품질 검증</span> — <code>validate_dataset()</code>이 결측값 비율, 음수값, 4σ 이상치를 체크하고 로그를 출력합니다. 결측률 30% 초과 국가는 분석에서 제외됩니다.</p>
+      <p><span class="kw">4단계: 병합 & Decoupling 분류</span> — 세 데이터프레임을 <code>country+year</code>로 inner join하고, <code>classify_decoupling()</code>이 2010→2022 변화율 기준으로 5개 상태로 분류합니다.</p>
+      <p><span class="kw">5단계: JSON 출력</span> — 대시보드가 직접 읽는 <code>cleaned_data.json</code>을 생성합니다. 메타데이터(생성일, 데이터 소스 출처, 방법론 설명)를 함께 포함해 JSON 파일 하나만 봐도 어떤 분석인지 알 수 있게 했습니다.</p>
+      <div class="code">pip install pandas requests<br>python data_pipeline.py<br># [1/5] OWID CSV 다운로드 → co2_per_capita, renewables_share_energy 추출<br># [2/5] World Bank API 호출 × 40국 → gdp_per_capita 수집<br># [3/5] 연도 보간 (2000~2022 전체 채우기)<br># [4/5] 데이터 검증 (rows=920, nulls=0, 이상치 체크)<br># [5/5] Decoupling 분류 + cleaned_data.json 출력</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">pandas merge에서 outer join 대신 inner join을 쓴 이유는요?</div>
+    <div class="qa-a">
+      <p>세 데이터셋 모두에 존재하는 국가와 연도만 분석 대상으로 삼기 위해서입니다. outer join을 쓰면 CO₂ 데이터는 있지만 GDP 데이터가 없는 케이스에서 NaN이 발생하고, 이후 decoupling 분류에서 오류나 잘못된 결과가 나올 수 있습니다.</p>
+      <p>inner join은 더 엄격하지만 신뢰도가 높습니다. 데이터가 완전히 있는 국가·연도만 포함하므로 분석 결과의 신뢰성이 보장됩니다. 실제로 inner join 후 40개국×23년 = 920행이 완전히 유지됐고, 결측 없이 처리됐습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">대시보드를 어떻게 구현했나요? 어떤 기술 스택을 썼나요?</div>
+    <div class="qa-a">
+      <p>순수 HTML/CSS/JavaScript로 구현했고, 차트는 <span class="kw">Chart.js 4.4</span>를 사용했습니다. 백엔드 서버 없이 정적 파일만으로 동작하도록 설계했습니다 — 이러면 GitHub Pages에 바로 배포할 수 있고, 서버 비용이 없습니다.</p>
+      <p>데이터는 <code>cleaned_data.json</code>을 JavaScript 변수로 임베딩해서 파일 로드 지연 없이 즉시 렌더링됩니다. 총 4개 탭: Overview(요약 KPI + 주요 발견), Trend View(국가별 시계열), Scatter(GDP vs CO₂ 버블차트 + 연도 슬라이더), All Countries(필터 가능한 테이블). 반응형 레이아웃으로 모바일에서도 동작합니다.</p>
+      <div class="tip">코드가 공개돼 있어서 면접관이 GitHub에서 직접 볼 수 있습니다. 깨끗한 코드 구조와 주석, README를 유지하는 것이 이 포인트를 극대화합니다.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">파이썬 코드에서 classify_decoupling 함수를 더 구체적으로 설명해주세요.</div>
+    <div class="qa-a">
+      <p>각 국가에 대해 2010년과 2022년 데이터를 추출하고, GDP와 CO₂의 변화율을 퍼센트로 계산합니다.</p>
+      <div class="code">gdp_change = (gdp_end - gdp_base) / gdp_base * 100<br>co2_change = (co2_end - co2_base) / co2_base * 100<br><br># 분류 로직<br>if gdp_change &lt; -5:              → "Negative (GDP declined)"<br>elif gdp+10% AND co2-10%:         → "Strong Decoupling"<br>elif gdp+10% AND co2 within ±10%: → "Weak Decoupling"<br>elif gdp+10% AND co2+10%:         → "No Decoupling"<br>else:                              → "Low growth"</div>
+      <p>결과를 딕셔너리로 반환해서 이후 JSON 출력 단계에서 국가별 시계열 데이터와 함께 묶습니다. 2022년 데이터가 없는 국가는 "Insufficient data"로 표시되도록 예외 처리도 넣었습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 분석 결과 ===== -->
+<div id="findings" class="cat-section">
+  <div class="cat-title">분석 결과 관련 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">가장 인상적인 발견은 무엇이었나요?</div>
+    <div class="qa-a">
+      <p>덴마크입니다. GDP +25%, CO₂/인 -50.5% — 이 두 숫자가 동시에 일어났다는 게 처음에 믿기 어려웠습니다. 검증해보니 진짜였습니다. 핵심 드라이버는 풍력 발전 비중이 2010년 22.5%에서 2022년 50.2%로 두 배 이상 늘어난 것이었습니다. 덴마크는 1970년대 오일쇼크 이후 40년간 일관된 에너지 정책을 유지한 사례입니다 — 단기 정치 사이클에 흔들리지 않은 장기 투자의 결과입니다.</p>
+      <p>두 번째로 인상적인 발견은 <span class="kw">영국의 속도</span>입니다. 2010년 재생에너지 비중 8%에서 2022년 31%로 빠르게 올라가면서 CO₂/인이 -40%를 기록했습니다. 영국은 석탄 발전소를 적극적으로 폐쇄하고 해상 풍력을 빠르게 확대한 것이 결정적이었습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">중국 결과가 "No Decoupling"으로 분류됐는데, 이게 맞는 건가요? 중국은 재생에너지에 많이 투자하지 않나요?</div>
+    <div class="qa-a">
+      <p>좋은 질문입니다. 중국은 제 분류에서 "No Decoupling"이지만, 그 안의 맥락이 중요합니다. 2010년~2022년 사이 GDP는 +145.7% 성장했고 CO₂/인은 +22.6% 증가했습니다 — 이게 "No Decoupling" 기준에 해당합니다.</p>
+      <p>하지만 <span class="kw">CO₂ intensity(GDP 단위당 배출량)</span>로 보면 다른 그림입니다. 중국의 GDP당 CO₂는 2000년 대비 약 40% 감소했습니다 — 경제 성장보다 훨씬 느린 속도로 배출이 늘고 있다는 뜻입니다. 절대 배출량은 여전히 세계 최대이고, 1인당 수치도 아직 EU 평균보다 높습니다. 중국은 "상대적 decoupling은 달성했지만 절대적 decoupling은 아직"인 상태입니다. 이 뉘앙스를 대시보드의 "China's story is complex" 섹션에서 명시했습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">인도, 베트남처럼 "No Decoupling"인 나라들을 선진국과 직접 비교하는 게 공정한가요?</div>
+    <div class="qa-a">
+      <p>공정하지 않을 수 있습니다 — 그래서 대시보드에 이 맥락을 명시했습니다. 영국이 산업혁명 때 석탄을 태우며 성장한 것처럼, 지금 인도와 베트남은 비슷한 성장 단계를 거치고 있습니다. 이들에게 "지금 당장 decoupling하라"는 건 선진국이 이미 완료한 고탄소 성장 단계를 막는 것과 같습니다.</p>
+      <p>더 의미 있는 비교는 <span class="kw">같은 소득 수준일 때 과거 선진국과 비교</span>하는 것입니다. 인도의 현재 CO₂/인(2t)은 미국이 1940년대에 있던 수준과 비슷합니다. 이 역사적 맥락 분석이 다음 버전에서 추가할 핵심 개선 사항 중 하나입니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">상관관계를 보여주는 건데, 재생에너지가 CO₂ 감소의 원인이라고 할 수 있나요?</div>
+    <div class="qa-a">
+      <p>할 수 없습니다 — 이 대시보드는 인과관계(causality)가 아닌 상관관계(correlation)를 보여줍니다. 그리고 그 한계를 methodology 탭에 명시했습니다.</p>
+      <p>재생에너지 비중이 높은 국가가 CO₂ 감소를 보인다는 패턴은 분명히 있습니다. 하지만 이걸 인과관계로 해석하려면 <span class="kw">Granger causality test</span>나 패널 회귀분석(fixed effects model)이 필요합니다. 혼동 변수(confounders)도 있습니다 — 재생에너지를 늘린 국가들은 동시에 에너지 효율 정책, 탄소세, 산업구조 변화도 함께 진행했기 때문입니다. 이 인과관계 분석은 이 프로젝트의 범위를 넘어서는 작업이지만, 명확히 해야 할 한계입니다.</p>
+      <div class="tip">이 대답이 중요합니다. 면접관이 "상관관계와 인과관계를 구분할 줄 아는가"를 테스트하는 질문입니다. 솔직하게 한계를 인정하고 어떻게 해결할 수 있는지 제시하는 것이 정직하고 설득력 있습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 한계 ===== -->
+<div id="limits" class="cat-section">
+  <div class="cat-title">한계 & 개선점 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">이 프로젝트의 가장 큰 한계가 무엇이라고 생각하나요?</div>
+    <div class="qa-a">
+      <p>세 가지를 꼽겠습니다. 가장 큰 것은 <span class="kw">소비 기반 배출량(consumption-based emissions)을 쓰지 않은 것</span>입니다. 현재 생산 기반 데이터를 씁니다 — 즉, 영국이나 독일이 탄소 집약적 제조업을 중국에 아웃소싱했다면, 영국·독일의 배출은 줄어보이지만 사실 그 탄소는 중국 수치에 잡힙니다. 소비 기반으로 보면 유럽의 "decoupling" 달성이 일부 허구일 수 있습니다.</p>
+      <p>둘째, <span class="kw">인과관계 검증 없음</span>입니다. 재생에너지가 실제로 decoupling을 이끌었는지, 아니면 서비스 경제로의 전환이 주요 원인인지 구분이 안 됩니다.</p>
+      <p>셋째, <span class="kw">불확실성 시각화 없음</span>입니다. 개발도상국 데이터는 선진국보다 정확도가 낮습니다. 이 불확실성을 신뢰구간이나 데이터 품질 표시로 시각화했어야 했습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">다음 버전을 만든다면 무엇을 가장 먼저 개선하겠나요?</div>
+    <div class="qa-a">
+      <p>소비 기반 CO₂ 데이터를 추가하겠습니다. Our World in Data에 consumption-based CO₂ 데이터가 있습니다. 현재 생산 기반 데이터와 나란히 보여주면 "실제 탄소 발자국"이 어떻게 다른지 보여줄 수 있고, 아웃소싱 효과를 검증할 수 있습니다.</p>
+      <p>두 번째 개선은 <span class="kw">섹터별 분해</span>입니다. 발전, 수송, 산업 각각의 decoupling이 다릅니다. 예를 들어 영국은 발전 부문에서는 큰 decoupling을 달성했지만 수송 부문은 여전히 화석연료 의존이 높습니다. 이 세분화가 정책적 함의를 크게 바꿉니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">재생에너지 지표에 대수력(large hydro)을 포함시킨 게 적절한가요?</div>
+    <div class="qa-a">
+      <p>논쟁적인 선택입니다. 대수력을 포함하면 브라질(~44%), 노르웨이(~75%)의 재생에너지 비중이 매우 높게 나옵니다. 하지만 대형 댐은 생태계 파괴, 이주민 발생, 메탄 배출(저수지 식생 분해) 등으로 인해 국제 기준에서도 논란이 있습니다.</p>
+      <p>Our World in Data의 기본 정의가 대수력을 포함하기 때문에 그대로 사용했고, 이 결정을 methodology에 명시했습니다. 대수력 제외 버전을 함께 보여주는 것이 개선 사항 중 하나입니다 — 특히 수력 비중이 큰 국가들에서 결과가 크게 달라집니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 비즈니스 연결 ===== -->
+<div id="biz" class="cat-section">
+  <div class="cat-title">비즈니스 연결 & 적용 질문</div>
+
+  <div class="qa">
+    <div class="qa-q">이 프로젝트에서 배운 것이 컨포트랩에서의 업무에 어떻게 적용되나요?</div>
+    <div class="qa-a">
+      <p>세 가지 연결고리가 있습니다. 첫째, <span class="kw">KPI 먼저 정의하는 워크플로우</span>입니다. 이 프로젝트에서 "무엇을 측정할 것인가"를 먼저 고정하고 데이터를 수집한 방식은 PORTA에서 제조 현장 KPI(OEE, 불량률, 에너지 소비)를 설계할 때 동일하게 적용됩니다. 측정 기준이 흐리면 대시보드가 의미 없어집니다.</p>
+      <p>둘째, <span class="kw">재현 가능한 파이프라인</span>입니다. data_pipeline.py가 언제 누가 돌려도 같은 결과를 내도록 설계한 것이 제조 현장 데이터 수집에서 가장 중요한 가치입니다 — 센서 데이터 품질이 일관되지 않으면 AI 분석 결과 전체를 신뢰할 수 없습니다.</p>
+      <p>셋째, <span class="kw">의사결정을 돕는 시각화</span>입니다. 데이터를 보여주는 게 목적이 아니라 "발생하기 전에 문제를 포착할 수 있는 구조"를 만드는 것이 목적 — 이 프로젝트에서 그 철학을 실제로 구현해봤습니다.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">이 방법론을 제조 현장 데이터에 적용한다면 어떻게 할 것 같나요?</div>
+    <div class="qa-a">
+      <p>구조는 같습니다. 먼저 핵심 질문을 정의합니다 — "이 설비는 안정적으로 운영되고 있는가"라면, 이 질문에 답하는 최소한의 KPI를 정의합니다. 예를 들어 OEE(전체 설비 효율), MTBF(평균 고장 간격), 에너지 소비량/산출량.</p>
+      <p>그 다음 데이터 파이프라인입니다. 센서 데이터는 결측, 이상치, 드리프트가 발생합니다 — 이 부분이 저의 SSG 데이터 품질 경험과 직결됩니다. 검증 레이어를 먼저 만들고, 이상이 감지되면 로그를 남기는 구조를 구축합니다.</p>
+      <p>마지막으로 대시보드 설계입니다. 현장 담당자가 한 화면에서 설비 상태를 파악할 수 있어야 합니다 — 이 프로젝트에서 만든 Overview 탭처럼, KPI 3~4개로 요약하고 드릴다운이 가능한 구조입니다.</p>
+      <div class="tip">이 답변이 가장 강력합니다. 프로젝트의 방법론을 컨포트랩의 실제 업무 문제에 1:1로 연결하는 것이 면접 전체를 관통하는 메시지가 됩니다.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">이 프로젝트가 실제 회사 데이터에 적용되면 다른 점이 있나요?</div>
+    <div class="qa-a">
+      <p>크게 두 가지가 다릅니다. 첫째, <span class="kw">데이터 갱신 주기</span>입니다. 이 프로젝트는 연간 공공 데이터를 씁니다. 제조 현장 데이터는 초 단위로 갱신됩니다. 실시간 처리 파이프라인 — 스트리밍 데이터 처리, 알람 트리거 등 — 이 추가로 필요합니다.</p>
+      <p>둘째, <span class="kw">데이터 보안과 접근 권한</span>입니다. 공공 데이터는 누구나 볼 수 있지만, 기업 운영 데이터는 접근 권한 관리가 필요합니다. 어떤 역할의 사람이 어떤 KPI를 볼 수 있는지 설계가 필요합니다.</p>
+      <p>방법론 측면에서는 같은 원칙이 적용됩니다 — KPI 먼저 정의, 데이터 품질 검증, 재현 가능한 파이프라인, 의사결정을 돕는 시각화. 도메인은 다르지만 구조는 같습니다.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function show(id,btn){
+  document.querySelectorAll('.cat-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
