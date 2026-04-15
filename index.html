@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Energy & Sustainability Dashboard — GunHee Lee</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#0a0c10;--surface:#13161d;--surface2:#1c1f28;--border:#252836;
@@ -341,561 +340,282 @@ tr:hover td{background:rgba(255,255,255,.03)}
 </div>
 
 <script>
-/* =========================================================
-   Energy & Sustainability Dashboard
-   Fixed version:
-   - Removes duplicated raw JSON that caused JavaScript errors
-   - Defines all tab navigation, chart, filter, and table functions
-   - Uses embedded data, so GitHub Pages does not depend on fetch()
-   ========================================================= */
-
+/* No-CDN dashboard version: all charts are drawn with inline SVG. */
 const DASHBOARD_DATA = {"summary":{"latest_year":2022,"global_avg_co2":5.9,"global_avg_renewables":27.8,"global_avg_gdp":30072,"strong_decoupling_count":16,"total_countries":40},"countries":[{"n":"Argentina","s":"Low growth","g":-2.8,"co":-17.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[4.0,4.02,4.04,4.06,4.08,4.1,4.2,4.3,4.4,4.5,4.6,4.62,4.64,4.66,4.68,4.7,4.6,4.5,4.4,4.3,3.5,3.65,3.8],"ren":[11.0,10.9,10.8,10.7,10.6,10.5,10.7,10.9,11.1,11.3,11.5,11.8,12.1,12.4,12.7,13.0,13.4,13.8,14.1,14.5,15.5,15.8,16.0],"gdp":[13000,13400,13800,14200,14600,15000,15600,16200,16800,17400,18000,18300,18600,18900,19200,19500,19125,18750,18375,18000,16000,16750,17500]},{"n":"Australia","s":"Strong Decoupling","g":19.0,"co":-19.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[17.9,17.98,18.06,18.14,18.22,18.3,18.14,17.98,17.82,17.66,17.5,17.2,16.9,16.6,16.3,16.0,15.7,15.4,15.1,14.8,14.4,14.25,14.1],"ren":[5.5,5.6,5.6,5.7,5.7,5.8,6.2,6.7,7.1,7.6,8.0,8.8,9.6,10.4,11.2,12.0,13.3,14.6,15.8,17.1,19.1,20.8,22.4],"gdp":[32000,33000,34000,35000,36000,37000,38000,39000,40000,41000,42000,42600,43200,43800,44400,45000,46000,47000,48000,49000,47000,48500,50000]},{"n":"Austria","s":"Strong Decoupling","g":23.7,"co":-15.7,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[8.9,8.96,9.02,9.08,9.14,9.2,9.02,8.84,8.66,8.48,8.3,8.16,8.02,7.88,7.74,7.6,7.58,7.55,7.53,7.5,6.7,6.85,7.0],"ren":[23.5,23.7,23.9,24.1,24.3,24.5,25.2,25.9,26.6,27.3,28.0,28.7,29.4,30.1,30.8,31.5,32.1,32.8,33.4,34.0,36.5,37.2,38.0],"gdp":[32000,32800,33600,34400,35200,36000,36400,36800,37200,37600,38000,38800,39600,40400,41200,42000,43375,44750,46125,47500,44000,45500,47000]},{"n":"Bangladesh","s":"No Decoupling","g":83.8,"co":100.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[0.2,0.2,0.2,0.2,0.2,0.2,0.22,0.24,0.26,0.28,0.3,0.32,0.34,0.36,0.38,0.4,0.42,0.45,0.47,0.5,0.5,0.55,0.6],"ren":[52.0,51.2,50.4,49.6,48.8,48.0,47.4,46.8,46.2,45.6,45.0,43.8,42.6,41.4,40.2,39.0,38.0,37.0,36.0,35.0,34.5,35.2,36.0],"gdp":[2500,2600,2700,2800,2900,3000,3140,3280,3420,3560,3700,3920,4140,4360,4580,4800,5100,5400,5700,6000,6100,6450,6800]},{"n":"Belgium","s":"Strong Decoupling","g":27.1,"co":-25.5,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[10.8,10.8,10.8,10.8,10.8,10.8,10.68,10.56,10.44,10.32,10.2,9.82,9.44,9.06,8.68,8.3,8.22,8.15,8.07,8.0,7.2,7.4,7.6],"ren":[2.5,2.7,2.9,3.1,3.3,3.5,4.2,4.9,5.6,6.3,7.0,7.9,8.8,9.7,10.6,11.5,12.0,12.5,13.0,13.5,15.5,16.2,17.0],"gdp":[30000,30600,31200,31800,32400,33000,33400,33800,34200,34600,35000,35800,36600,37400,38200,39000,40250,41500,42750,44000,40000,42250,44500]},{"n":"Brazil","s":"Low growth","g":7.4,"co":-12.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[2.1,2.12,2.14,2.16,2.18,2.2,2.26,2.32,2.38,2.44,2.5,2.48,2.46,2.44,2.42,2.4,2.38,2.35,2.33,2.3,2.0,2.1,2.2],"ren":[44.2,44.3,44.5,44.6,44.8,44.9,44.8,44.8,44.7,44.7,44.6,44.4,44.2,43.9,43.7,43.5,44.2,44.9,45.6,46.3,48.0,47.7,47.4],"gdp":[8500,8800,9100,9400,9700,10000,10700,11400,12100,12800,13500,13700,13900,14100,14300,14500,14500,14500,14500,14500,13500,14000,14500]},{"n":"Canada","s":"Weak Decoupling","g":19.0,"co":-5.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[18.4,18.3,18.2,18.1,18.0,17.9,17.26,16.62,15.98,15.34,14.7,14.8,14.9,15.0,15.1,15.2,15.1,15.0,14.9,14.8,13.6,13.75,13.9],"ren":[22.0,22.1,22.2,22.3,22.4,22.5,22.7,22.9,23.0,23.2,23.4,23.5,23.6,23.8,23.9,24.0,24.6,25.1,25.6,26.2,27.5,27.8,28.1],"gdp":[34000,34800,35600,36400,37200,38000,38300,38600,38900,39200,39500,40200,40900,41600,42300,43000,44000,45000,46000,47000,43500,45250,47000]},{"n":"Chile","s":"Weak Decoupling","g":29.7,"co":4.8,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[3.9,3.92,3.94,3.96,3.98,4.0,4.04,4.08,4.12,4.16,4.2,4.32,4.44,4.56,4.68,4.8,4.78,4.75,4.72,4.7,4.2,4.3,4.4],"ren":[22.0,22.1,22.2,22.3,22.4,22.5,22.6,22.7,22.8,22.9,23.0,23.1,23.2,23.3,23.4,23.5,25.1,26.8,28.4,30.0,33.5,35.2,37.0],"gdp":[14000,14500,15000,15500,16000,16500,16900,17300,17700,18100,18500,19100,19700,20300,20900,21500,22000,22500,23000,23500,21000,22500,24000]},{"n":"China","s":"No Decoupling","g":145.7,"co":22.6,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[2.7,2.98,3.26,3.54,3.82,4.1,4.52,4.94,5.36,5.78,6.2,6.36,6.52,6.68,6.84,7.0,7.1,7.2,7.3,7.4,7.5,7.55,7.6],"ren":[8.5,8.6,8.7,8.8,8.9,9.0,9.3,9.5,9.8,10.0,10.3,10.6,11.0,11.3,11.7,12.0,12.6,13.1,13.7,14.2,15.3,16.1,16.8],"gdp":[2900,3180,3460,3740,4020,4300,4840,5380,5920,6460,7000,7700,8400,9100,9800,10500,11500,12500,13500,14500,15200,16200,17200]},{"n":"Colombia","s":"Weak Decoupling","g":18.5,"co":0.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.62,1.64,1.66,1.68,1.7,1.7,1.7,1.7,1.7,1.4,1.5,1.6],"ren":[30.5,30.6,30.7,30.8,30.9,31.0,31.2,31.4,31.6,31.8,32.0,31.9,31.8,31.7,31.6,31.5,31.1,30.8,30.4,30.0,31.5,32.0,32.5],"gdp":[10000,10300,10600,10900,11200,11500,11900,12300,12700,13100,13500,13900,14300,14700,15100,15500,15750,16000,16250,16500,14500,15250,16000]},{"n":"Denmark","s":"Strong Decoupling","g":25.0,"co":-50.5,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[11.1,10.8,10.5,10.2,9.9,9.6,9.5,9.4,9.3,9.2,9.1,8.62,8.14,7.66,7.18,6.7,6.47,6.25,6.03,5.8,4.9,4.7,4.5],"ren":[14.8,15.4,16.1,16.7,17.4,18.0,18.9,19.8,20.7,21.6,22.5,24.6,26.8,28.9,31.1,33.2,35.0,36.9,38.7,40.5,46.3,48.2,50.2],"gdp":[33000,34000,35000,36000,37000,38000,38400,38800,39200,39600,40000,40800,41600,42400,43200,44000,45250,46500,47750,49000,47000,48500,50000]},{"n":"Egypt","s":"No Decoupling","g":26.1,"co":8.7,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[2.0,2.06,2.12,2.18,2.24,2.3,2.3,2.3,2.3,2.3,2.3,2.32,2.34,2.36,2.38,2.4,2.42,2.45,2.48,2.5,2.3,2.4,2.5],"ren":[8.5,8.4,8.2,8.1,7.9,7.8,7.8,7.9,7.9,8.0,8.0,8.1,8.2,8.3,8.4,8.5,8.9,9.2,9.6,10.0,12.0,13.2,14.5],"gdp":[9000,9300,9600,9900,10200,10500,10700,10900,11100,11300,11500,11700,11900,12100,12300,12500,12875,13250,13625,14000,13500,14000,14500]},{"n":"Finland","s":"Strong Decoupling","g":20.6,"co":-32.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[11.4,11.28,11.16,11.04,10.92,10.8,10.68,10.56,10.44,10.32,10.2,9.9,9.6,9.3,9.0,8.7,8.55,8.4,8.25,8.1,7.1,7.0,6.9],"ren":[24.0,24.3,24.6,24.9,25.2,25.5,26.4,27.3,28.2,29.1,30.0,31.0,32.0,33.0,34.0,35.0,35.8,36.6,37.4,38.2,41.0,42.2,43.5],"gdp":[28000,28800,29600,30400,31200,32000,32400,32800,33200,33600,34000,34400,34800,35200,35600,36000,37000,38000,39000,40000,38000,39500,41000]},{"n":"France","s":"Strong Decoupling","g":18.2,"co":-23.7,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[6.7,6.64,6.58,6.52,6.46,6.4,6.3,6.2,6.1,6.0,5.9,5.74,5.58,5.42,5.26,5.1,5.08,5.05,5.03,5.0,4.3,4.4,4.5],"ren":[9.5,9.8,10.1,10.5,10.8,11.1,11.5,11.9,12.2,12.6,13.0,13.4,13.9,14.3,14.8,15.2,15.8,16.3,16.9,17.4,20.0,20.6,21.3],"gdp":[30000,30500,31000,31500,32000,32500,32600,32700,32800,32900,33000,33600,34200,34800,35400,36000,37000,38000,39000,40000,36000,37500,39000]},{"n":"Germany","s":"Strong Decoupling","g":22.2,"co":-25.5,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[11.2,11.06,10.92,10.78,10.64,10.5,10.36,10.22,10.08,9.94,9.8,9.64,9.48,9.32,9.16,9.0,8.72,8.45,8.18,7.9,7.2,7.25,7.3],"ren":[5.5,6.1,6.7,7.3,7.9,8.5,9.6,10.7,11.8,12.9,14.0,15.6,17.2,18.9,20.5,22.1,23.6,25.2,26.8,28.3,32.1,33.4,34.6],"gdp":[31000,31300,31600,31900,32200,32500,33200,33900,34600,35300,36000,36900,37800,38700,39600,40500,41500,42500,43500,44500,41000,42500,44000]},{"n":"India","s":"No Decoupling","g":109.1,"co":42.9,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[0.9,0.94,0.98,1.02,1.06,1.1,1.16,1.22,1.28,1.34,1.4,1.44,1.48,1.52,1.56,1.6,1.68,1.75,1.82,1.9,1.7,1.85,2.0],"ren":[30.2,29.8,29.4,28.9,28.5,28.1,27.7,27.4,27.0,26.7,26.3,26.0,25.8,25.5,25.3,25.0,24.6,24.2,23.8,23.4,24.0,24.6,25.3],"gdp":[1700,1820,1940,2060,2180,2300,2500,2700,2900,3100,3300,3580,3860,4140,4420,4700,5200,5700,6200,6700,6200,6550,6900]},{"n":"Indonesia","s":"No Decoupling","g":50.0,"co":16.7,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[1.3,1.34,1.38,1.42,1.46,1.5,1.56,1.62,1.68,1.74,1.8,1.82,1.84,1.86,1.88,1.9,1.93,1.95,1.98,2.0,1.8,1.95,2.1],"ren":[35.0,34.6,34.2,33.8,33.4,33.0,32.6,32.2,31.8,31.4,31.0,30.7,30.4,30.1,29.8,29.5,29.4,29.4,29.4,29.3,30.2,30.6,31.0],"gdp":[5500,5800,6100,6400,6700,7000,7400,7800,8200,8600,9000,9400,9800,10200,10600,11000,11625,12250,12875,13500,12500,13000,13500]},{"n":"Italy","s":"Strong Decoupling","g":10.3,"co":-26.8,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[7.8,7.84,7.88,7.92,7.96,8.0,7.82,7.64,7.46,7.28,7.1,6.84,6.58,6.32,6.06,5.8,5.75,5.7,5.65,5.6,4.9,5.05,5.2],"ren":[6.0,6.5,7.0,7.5,8.0,8.5,9.7,10.9,12.1,13.3,14.5,15.4,16.4,17.3,18.3,19.2,19.5,19.8,20.1,20.4,22.5,22.8,23.0],"gdp":[29000,29200,29400,29600,29800,30000,29800,29600,29400,29200,29000,29200,29400,29600,29800,30000,30750,31500,32250,33000,29000,30500,32000]},{"n":"Japan","s":"Weak Decoupling","g":17.9,"co":-7.8,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[9.5,9.52,9.54,9.56,9.58,9.6,9.48,9.36,9.24,9.12,9.0,9.08,9.16,9.24,9.32,9.4,9.22,9.05,8.88,8.7,8.2,8.25,8.3],"ren":[5.0,5.1,5.1,5.2,5.2,5.3,5.7,6.1,6.6,7.0,7.4,7.9,8.5,9.0,9.6,10.1,10.3,10.6,10.8,11.0,12.1,12.8,13.4],"gdp":[31500,31800,32100,32400,32700,33000,33100,33200,33300,33400,33500,34200,34900,35600,36300,37000,37750,38500,39250,40000,38000,38750,39500]},{"n":"Malaysia","s":"No Decoupling","g":31.8,"co":9.9,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[5.4,5.62,5.84,6.06,6.28,6.5,6.62,6.74,6.86,6.98,7.1,7.22,7.34,7.46,7.58,7.7,7.85,8.0,8.15,8.3,7.3,7.55,7.8],"ren":[8.0,7.9,7.8,7.7,7.6,7.5,7.6,7.7,7.8,7.9,8.0,8.1,8.2,8.3,8.4,8.5,8.8,9.0,9.2,9.5,10.5,11.2,12.0],"gdp":[16000,16600,17200,17800,18400,19000,19600,20200,20800,21400,22000,22700,23400,24100,24800,25500,26125,26750,27375,28000,26000,27500,29000]},{"n":"Mexico","s":"Low growth","g":9.1,"co":-18.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[3.8,3.82,3.84,3.86,3.88,3.9,3.88,3.86,3.84,3.82,3.8,3.76,3.72,3.68,3.64,3.6,3.55,3.5,3.45,3.4,2.9,3.0,3.1],"ren":[10.5,10.4,10.3,10.2,10.1,10.0,10.1,10.2,10.3,10.4,10.5,10.8,11.1,11.4,11.7,12.0,12.8,13.5,14.2,15.0,16.5,16.9,17.2],"gdp":[15000,15200,15400,15600,15800,16000,16100,16200,16300,16400,16500,16800,17100,17400,17700,18000,18125,18250,18375,18500,16500,17250,18000]},{"n":"Netherlands","s":"Strong Decoupling","g":26.2,"co":-26.4,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[11.9,11.86,11.82,11.78,11.74,11.7,11.56,11.42,11.28,11.14,11.0,10.78,10.56,10.34,10.12,9.9,9.68,9.45,9.22,9.0,7.9,8.0,8.1],"ren":[2.8,3.0,3.2,3.4,3.6,3.8,4.2,4.6,5.0,5.4,5.8,6.3,6.8,7.3,7.8,8.3,9.2,10.2,11.1,12.0,14.5,16.5,18.5],"gdp":[36000,36600,37200,37800,38400,39000,39200,39400,39600,39800,40000,40800,41600,42400,43200,44000,45500,47000,48500,50000,47000,48750,50500]},{"n":"Nigeria","s":"Negative (GDP declined)","g":-5.5,"co":16.7,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[0.5,0.52,0.54,0.56,0.58,0.6,0.6,0.6,0.6,0.6,0.6,0.62,0.64,0.66,0.68,0.7,0.7,0.7,0.7,0.7,0.6,0.65,0.7],"ren":[78.0,77.6,77.2,76.8,76.4,76.0,75.8,75.6,75.4,75.2,75.0,74.4,73.8,73.2,72.6,72.0,71.0,70.0,69.0,68.0,66.5,65.8,65.0],"gdp":[3500,3700,3900,4100,4300,4500,4700,4900,5100,5300,5500,5600,5700,5800,5900,6000,5875,5750,5625,5500,5000,5100,5200]},{"n":"Norway","s":"Strong Decoupling","g":19.6,"co":-23.9,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[8.5,8.6,8.7,8.8,8.9,9.0,9.04,9.08,9.12,9.16,9.2,9.02,8.84,8.66,8.48,8.3,8.18,8.05,7.92,7.8,7.2,7.1,7.0],"ren":[63.0,63.3,63.6,63.9,64.2,64.5,64.6,64.7,64.8,64.9,65.0,66.0,67.0,68.0,69.0,70.0,70.5,71.0,71.5,72.0,73.5,74.2,75.0],"gdp":[44000,45800,47600,49400,51200,53000,53600,54200,54800,55400,56000,56800,57600,58400,59200,60000,61250,62500,63750,65000,58000,62500,67000]},{"n":"Pakistan","s":"No Decoupling","g":16.0,"co":11.1,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[0.7,0.72,0.74,0.76,0.78,0.8,0.82,0.84,0.86,0.88,0.9,0.9,0.9,0.9,0.9,0.9,0.93,0.95,0.97,1.0,0.9,0.95,1.0],"ren":[45.0,44.6,44.2,43.8,43.4,43.0,42.8,42.6,42.4,42.2,42.0,41.7,41.4,41.1,40.8,40.5,40.0,39.5,39.0,38.5,39.0,39.5,40.0],"gdp":[3800,3940,4080,4220,4360,4500,4600,4700,4800,4900,5000,5100,5200,5300,5400,5500,5550,5600,5650,5700,5600,5700,5800]},{"n":"Poland","s":"Weak Decoupling","g":82.4,"co":1.2,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[8.4,8.42,8.44,8.46,8.48,8.5,8.46,8.42,8.38,8.34,8.3,8.24,8.18,8.12,8.06,8.0,8.05,8.1,8.15,8.2,7.8,8.1,8.4],"ren":[4.8,4.8,4.9,4.9,5.0,5.0,5.7,6.4,7.1,7.8,8.5,9.2,9.9,10.6,11.3,12.0,12.5,13.0,13.5,14.0,15.5,16.1,16.8],"gdp":[11000,11500,12000,12500,13000,13500,14200,14900,15600,16300,17000,18000,19000,20000,21000,22000,23625,25250,26875,28500,28000,29500,31000]},{"n":"Portugal","s":"Strong Decoupling","g":28.9,"co":-21.8,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[6.4,6.42,6.44,6.46,6.48,6.5,6.3,6.1,5.9,5.7,5.5,5.38,5.26,5.14,5.02,4.9,4.88,4.85,4.83,4.8,3.9,4.1,4.3],"ren":[18.5,19.2,19.9,20.6,21.3,22.0,23.3,24.6,25.9,27.2,28.5,29.7,30.9,32.1,33.3,34.5,34.4,34.2,34.1,34.0,38.0,39.2,40.5],"gdp":[22000,22200,22400,22600,22800,23000,22900,22800,22700,22600,22500,22800,23100,23400,23700,24000,25125,26250,27375,28500,25500,27250,29000]},{"n":"Romania","s":"Strong Decoupling","g":125.0,"co":-19.6,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[5.2,5.24,5.28,5.32,5.36,5.4,5.24,5.08,4.92,4.76,4.6,4.44,4.28,4.12,3.96,3.8,3.8,3.8,3.8,3.8,3.6,3.65,3.7],"ren":[17.0,17.3,17.6,17.9,18.2,18.5,19.0,19.5,20.0,20.5,21.0,21.8,22.6,23.4,24.2,25.0,25.6,26.2,26.9,27.5,29.0,29.8,30.5],"gdp":[7500,8000,8500,9000,9500,10000,10400,10800,11200,11600,12000,12800,13600,14400,15200,16000,18000,20000,22000,24000,23500,25250,27000]},{"n":"Russia","s":"Weak Decoupling","g":27.5,"co":-0.9,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[10.7,10.8,10.9,11.0,11.1,11.2,11.18,11.16,11.14,11.12,11.1,11.16,11.22,11.28,11.34,11.4,11.45,11.5,11.55,11.6,10.7,10.85,11.0],"ren":[3.4,3.4,3.4,3.5,3.5,3.5,3.5,3.5,3.6,3.6,3.6,3.6,3.6,3.5,3.5,3.5,3.6,3.7,3.8,3.9,4.2,4.3,4.5],"gdp":[12000,13000,14000,15000,16000,17000,17600,18200,18800,19400,20000,20600,21200,21800,22400,23000,24000,25000,26000,27000,25000,25250,25500]},{"n":"Saudi Arabia","s":"Weak Decoupling","g":18.8,"co":-2.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[13.7,13.82,13.94,14.06,14.18,14.3,14.46,14.62,14.78,14.94,15.1,15.38,15.66,15.94,16.22,16.5,16.2,15.9,15.6,15.3,14.0,14.4,14.8],"ren":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.1,0.2,0.2,0.5,0.8,1.0,1.3,2.1,2.8,3.4],"gdp":[30000,31000,32000,33000,34000,35000,36000,37000,38000,39000,40000,41000,42000,43000,44000,45000,45500,46000,46500,47000,42000,44750,47500]},{"n":"South Africa","s":"Low growth","g":0.0,"co":-22.2,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[7.7,7.84,7.98,8.12,8.26,8.4,8.34,8.28,8.22,8.16,8.1,7.94,7.78,7.62,7.46,7.3,7.2,7.1,7.0,6.9,6.1,6.2,6.3],"ren":[9.0,8.9,8.8,8.7,8.6,8.5,8.4,8.3,8.2,8.1,8.0,8.1,8.2,8.2,8.3,8.4,8.6,8.7,8.8,9.0,9.8,10.4,11.0],"gdp":[9500,9700,9900,10100,10300,10500,10700,10900,11100,11300,11500,11700,11900,12100,12300,12500,12375,12250,12125,12000,10500,11000,11500]},{"n":"South Korea","s":"Weak Decoupling","g":55.4,"co":0.9,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[9.1,9.28,9.46,9.64,9.82,10.0,10.26,10.52,10.78,11.04,11.3,11.42,11.54,11.66,11.78,11.9,11.97,12.05,12.12,12.2,11.7,11.55,11.4],"ren":[1.0,1.1,1.1,1.2,1.2,1.3,1.5,1.7,1.8,2.0,2.2,2.6,2.9,3.3,3.6,4.0,4.2,4.4,4.6,4.8,5.5,6.3,7.2],"gdp":[19000,19900,20800,21700,22600,23500,24400,25300,26200,27100,28000,29100,30200,31300,32400,33500,35000,36500,38000,39500,40000,41750,43500]},{"n":"Spain","s":"Strong Decoupling","g":22.2,"co":-20.3,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[7.7,7.82,7.94,8.06,8.18,8.3,7.92,7.54,7.16,6.78,6.4,6.22,6.04,5.86,5.68,5.5,5.53,5.55,5.58,5.6,4.8,4.95,5.1],"ren":[7.0,7.6,8.2,8.8,9.4,10.0,11.3,12.6,13.9,15.2,16.5,17.2,17.9,18.6,19.3,20.0,20.5,21.0,21.5,22.0,24.0,24.8,25.5],"gdp":[25000,25800,26600,27400,28200,29000,28600,28200,27800,27400,27000,27400,27800,28200,28600,29000,30250,31500,32750,34000,29000,31000,33000]},{"n":"Sweden","s":"Strong Decoupling","g":25.0,"co":-37.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[5.8,5.76,5.72,5.68,5.64,5.6,5.56,5.52,5.48,5.44,5.4,5.2,5.0,4.8,4.6,4.4,4.25,4.1,3.95,3.8,3.3,3.35,3.4],"ren":[33.0,34.1,35.2,36.3,37.4,38.5,39.4,40.3,41.2,42.1,43.0,44.6,46.1,47.7,49.2,50.8,51.8,52.7,53.6,54.6,57.0,58.5,60.1],"gdp":[33000,33800,34600,35400,36200,37000,37600,38200,38800,39400,40000,41000,42000,43000,44000,45000,46000,47000,48000,49000,47000,48500,50000]},{"n":"Thailand","s":"Weak Decoupling","g":33.3,"co":2.6,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[3.0,3.1,3.2,3.3,3.4,3.5,3.56,3.62,3.68,3.74,3.8,3.84,3.88,3.92,3.96,4.0,4.0,4.0,4.0,4.0,3.6,3.75,3.9],"ren":[16.5,16.4,16.3,16.2,16.1,16.0,16.1,16.2,16.3,16.4,16.5,16.8,17.1,17.4,17.7,18.0,18.4,18.8,19.1,19.5,20.8,21.4,22.0],"gdp":[10000,10400,10800,11200,11600,12000,12300,12600,12900,13200,13500,14100,14700,15300,15900,16500,17000,17500,18000,18500,16500,17250,18000]},{"n":"Turkey","s":"No Decoupling","g":59.4,"co":22.0,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[3.3,3.38,3.46,3.54,3.62,3.7,3.78,3.86,3.94,4.02,4.1,4.18,4.26,4.34,4.42,4.5,4.55,4.6,4.65,4.7,4.6,4.8,5.0],"ren":[12.0,11.9,11.8,11.7,11.6,11.5,11.8,12.1,12.4,12.7,13.0,13.8,14.6,15.4,16.2,17.0,17.6,18.2,18.9,19.5,21.0,22.2,23.4],"gdp":[10500,11100,11700,12300,12900,13500,14000,14500,15000,15500,16000,16700,17400,18100,18800,19500,19875,20250,20625,21000,21000,23250,25500]},{"n":"Ukraine","s":"Negative (GDP declined)","g":-11.8,"co":-46.5,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[7.0,7.08,7.16,7.24,7.32,7.4,7.34,7.28,7.22,7.16,7.1,6.76,6.42,6.08,5.74,5.4,5.28,5.15,5.03,4.9,4.5,4.15,3.8],"ren":[5.5,5.6,5.7,5.8,5.9,6.0,6.3,6.6,6.9,7.2,7.5,7.8,8.1,8.4,8.7,9.0,9.6,10.2,10.9,11.5,13.0,13.2,13.5],"gdp":[5000,5500,6000,6500,7000,7500,7700,7900,8100,8300,8500,8400,8300,8200,8100,8000,8375,8750,9125,9500,9000,8250,7500]},{"n":"United Kingdom","s":"Strong Decoupling","g":17.4,"co":-40.2,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[9.6,9.5,9.4,9.3,9.2,9.1,8.92,8.74,8.56,8.38,8.2,7.84,7.48,7.12,6.76,6.4,6.17,5.95,5.72,5.5,4.6,4.75,4.9],"ren":[2.6,2.9,3.2,3.4,3.7,4.0,4.8,5.6,6.4,7.2,8.0,9.8,11.7,13.5,15.4,17.2,19.1,21.1,23.1,25.0,29.5,30.4,31.2],"gdp":[31000,31800,32600,33400,34200,35000,34900,34800,34700,34600,34500,35300,36100,36900,37700,38500,39375,40250,41125,42000,38000,39250,40500]},{"n":"United States","s":"Strong Decoupling","g":23.8,"co":-24.3,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[20.5,20.36,20.22,20.08,19.94,19.8,19.3,18.8,18.3,17.8,17.3,16.96,16.62,16.28,15.94,15.6,15.25,14.9,14.55,14.2,12.8,12.95,13.1],"ren":[6.0,6.1,6.2,6.3,6.4,6.5,6.8,7.1,7.4,7.7,8.0,8.4,8.8,9.2,9.6,10.0,10.3,10.7,11.1,11.4,12.5,12.8,13.1],"gdp":[45000,46000,47000,48000,49000,50000,50100,50200,50300,50400,50500,51400,52300,53200,54100,55000,56750,58500,60250,62000,58000,60250,62500]},{"n":"Vietnam","s":"No Decoupling","g":90.9,"co":113.3,"yr":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022],"co2":[0.7,0.76,0.82,0.88,0.94,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.23,2.45,2.67,2.9,2.8,3.0,3.2],"ren":[50.0,49.2,48.4,47.6,46.8,46.0,44.8,43.6,42.4,41.2,40.0,39.1,38.2,37.3,36.4,35.5,34.2,33.0,31.8,30.5,31.0,32.2,33.5],"gdp":[3000,3200,3400,3600,3800,4000,4300,4600,4900,5200,5500,5800,6100,6400,6700,7000,7500,8000,8500,9000,9000,9750,10500]}]};
 
 const DATA = DASHBOARD_DATA;
-let charts = {};
-let currentMetric = "co2";
+let currentMetric = 'co2';
 
 const palette = {
-  accent: "#4f8ef7",
-  green: "#3ecf8e",
-  amber: "#f5a623",
-  red: "#f05050",
-  purple: "#9b72dd",
-  cyan: "#38bdf8",
-  text: "#e2e5f0",
-  dim: "#6b7280",
-  border: "#252836"
+  accent: '#4f8ef7', green: '#3ecf8e', amber: '#f5a623', red: '#f05050',
+  purple: '#9b72dd', cyan: '#38bdf8', text: '#e2e5f0', dim: '#6b7280', border: '#252836'
 };
+const lineColors = [palette.accent, palette.green, palette.amber, palette.red, palette.purple, palette.cyan, '#a3e635', '#fb7185', '#c084fc', '#facc15'];
 
-const lineColors = [
-  palette.accent,
-  palette.green,
-  palette.amber,
-  palette.red,
-  palette.purple,
-  palette.cyan,
-  "#a3e635",
-  "#fb7185",
-  "#c084fc",
-  "#facc15"
-];
-
-function $(id) {
-  return document.getElementById(id);
+function $(id){ return document.getElementById(id); }
+function latest(arr){ return arr[arr.length - 1]; }
+function pct(value){ return (value > 0 ? '+' : '') + Number(value).toFixed(1) + '%'; }
+function statusColor(status){
+  if(status.includes('Strong')) return palette.green;
+  if(status.includes('Weak')) return palette.accent;
+  if(status.includes('No')) return palette.red;
+  if(status.includes('Low')) return palette.amber;
+  return palette.purple;
 }
-
-function latest(arr) {
-  return arr[arr.length - 1];
+function statusClass(status){
+  if(status.includes('Strong')) return 'strong';
+  if(status.includes('Weak')) return 'weak';
+  if(status.includes('No')) return 'no';
+  if(status.includes('Low')) return 'low';
+  return 'neg';
 }
-
-function valueAtYear(country, field, year) {
+function valueAtYear(country, field, year){
   const idx = country.yr.indexOf(year);
   return idx >= 0 ? country[field][idx] : null;
 }
-
-function chartColor(i) {
-  return lineColors[i % lineColors.length];
+function clearChart(id){
+  const old = $(id);
+  if(!old || !old.parentElement) return null;
+  const wrap = old.parentElement;
+  wrap.innerHTML = '';
+  return wrap;
 }
-
-function statusColor(status) {
-  if (status.includes("Strong")) return palette.green;
-  if (status.includes("Weak")) return palette.accent;
-  if (status.includes("No")) return palette.red;
-  if (status.includes("Low")) return palette.amber;
-  return palette.purple;
+function makeSvg(wrap, height){
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 900 ' + height);
+  svg.setAttribute('width','100%');
+  svg.setAttribute('height','100%');
+  svg.setAttribute('role','img');
+  wrap.appendChild(svg);
+  return svg;
 }
-
-function statusClass(status) {
-  if (status.includes("Strong")) return "strong";
-  if (status.includes("Weak")) return "weak";
-  if (status.includes("No")) return "no";
-  if (status.includes("Low")) return "low";
-  return "neg";
+function el(svg, name, attrs){
+  const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+  Object.keys(attrs || {}).forEach(k => node.setAttribute(k, attrs[k]));
+  svg.appendChild(node);
+  return node;
 }
-
-function formatMoney(value) {
-  return "$" + Number(value).toLocaleString();
+function text(svg, x, y, str, size, color, anchor){
+  const t = el(svg, 'text', {x:x, y:y, fill:color || palette.dim, 'font-size':size || 11, 'text-anchor':anchor || 'start', 'font-family':'-apple-system, Segoe UI, sans-serif'});
+  t.textContent = str;
+  return t;
 }
-
-function pct(value) {
-  const sign = value > 0 ? "+" : "";
-  return sign + Number(value).toFixed(1) + "%";
-}
-
-function destroyChart(key) {
-  if (charts[key]) {
-    charts[key].destroy();
-    delete charts[key];
+function drawGrid(svg, m, w, h, yTicks){
+  for(let i=0;i<=yTicks;i++){
+    const y = m.t + (h / yTicks) * i;
+    el(svg, 'line', {x1:m.l, y1:y, x2:m.l+w, y2:y, stroke:palette.border, 'stroke-width':1});
   }
+  el(svg, 'line', {x1:m.l, y1:m.t, x2:m.l, y2:m.t+h, stroke:palette.border, 'stroke-width':1});
+  el(svg, 'line', {x1:m.l, y1:m.t+h, x2:m.l+w, y2:m.t+h, stroke:palette.border, 'stroke-width':1});
 }
-
-function resizeVisibleCharts() {
-  setTimeout(() => {
-    Object.values(charts).forEach(chart => {
-      if (chart && typeof chart.resize === "function") chart.resize();
+function lineChart(id, labels, series, yTitle){
+  const wrap = clearChart(id); if(!wrap) return;
+  const H = wrap.classList.contains('tall') ? 380 : 300;
+  const svg = makeSvg(wrap, H);
+  const m = {l:55, r:25, t:22, b:45};
+  const w = 900 - m.l - m.r, h = H - m.t - m.b;
+  const all = series.flatMap(s => s.data).filter(v => Number.isFinite(v));
+  let min = Math.min(...all), max = Math.max(...all);
+  if(min === max){ min -= 1; max += 1; }
+  const pad = (max-min)*0.08;
+  min -= pad; max += pad;
+  const x = i => m.l + (w * i / Math.max(1, labels.length - 1));
+  const y = v => m.t + h - ((v - min) / (max - min)) * h;
+  drawGrid(svg, m, w, h, 4);
+  for(let i=0;i<=4;i++){
+    const val = max - ((max-min)/4)*i;
+    text(svg, 48, m.t + (h/4)*i + 4, val.toFixed(yTitle && yTitle.includes('GDP') ? 0 : 1), 10, palette.dim, 'end');
+  }
+  [0, Math.floor(labels.length/2), labels.length-1].forEach(i => text(svg, x(i), m.t+h+24, labels[i], 10, palette.dim, 'middle'));
+  text(svg, m.l, 14, yTitle || '', 10, palette.dim, 'start');
+  series.forEach((s, idx) => {
+    const pts = s.data.map((v,i) => x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
+    el(svg, 'polyline', {points:pts, fill:'none', stroke:s.color || lineColors[idx%lineColors.length], 'stroke-width':2.4, 'stroke-linecap':'round', 'stroke-linejoin':'round'});
+    s.data.forEach((v,i) => {
+      if(i===0 || i===s.data.length-1 || i%5===0){
+        const c = el(svg, 'circle', {cx:x(i), cy:y(v), r:2.4, fill:s.color || lineColors[idx%lineColors.length]});
+        const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+        title.textContent = s.name + ' ' + labels[i] + ': ' + Number(v).toLocaleString();
+        c.appendChild(title);
+      }
     });
-  }, 80);
+  });
+  let lx = m.l, ly = H - 10;
+  series.slice(0,8).forEach((s, idx) => {
+    const color = s.color || lineColors[idx%lineColors.length];
+    el(svg,'circle',{cx:lx, cy:ly-4, r:4, fill:color});
+    text(svg,lx+10,ly,s.name,10,palette.text,'start');
+    lx += Math.min(150, 45 + s.name.length * 7);
+    if(lx > 760){ lx = m.l; ly -= 15; }
+  });
 }
-
-function nav(pageId, btn) {
-  document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
-  document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
-
-  const page = $(pageId);
-  if (page) page.classList.add("active");
-  if (btn) btn.classList.add("active");
-
-  resizeVisibleCharts();
-}
-
-function showDashboardError(message) {
-  const overview = $("overview");
-  if (!overview) return;
-
-  overview.insertAdjacentHTML(
-    "afterbegin",
-    `<div class="chart-card" style="border-color:var(--red);color:var(--red)">
-      <div class="chart-title">Dashboard loading error</div>
-      <div class="chart-sub" style="color:var(--red)">${message}</div>
-    </div>`
-  );
-}
-
-function updateKpis() {
-  const summary = DATA.summary;
-  const countries = DATA.countries;
-  const latestYear = summary.latest_year || latest(countries[0].yr);
-  const baseYear = 2010;
-
-  const avgByYear = (field, year) => {
-    const values = countries.map(c => valueAtYear(c, field, year)).filter(v => v !== null);
-    return values.reduce((sum, v) => sum + v, 0) / values.length;
-  };
-
-  const co2Latest = summary.global_avg_co2 ?? avgByYear("co2", latestYear);
-  const renLatest = summary.global_avg_renewables ?? avgByYear("ren", latestYear);
-  const co2Base = avgByYear("co2", baseYear);
-  const renBase = avgByYear("ren", baseYear);
-  const strongCount = countries.filter(c => c.s.includes("Strong")).length;
-  const noCount = countries.filter(c => c.s.includes("No")).length;
-
-  $("kpi-co2").textContent = co2Latest.toFixed(1) + " t";
-  $("kpi-ren").textContent = renLatest.toFixed(1) + "%";
-  $("kpi-decouple").textContent = `${strongCount} / ${countries.length}`;
-
-  const co2Change = ((co2Latest - co2Base) / co2Base) * 100;
-  const renChange = ((renLatest - renBase) / renBase) * 100;
-
-  const kpiSub = document.querySelectorAll(".kpi-sub");
-  if (kpiSub[0]) kpiSub[0].textContent = `vs ${co2Base.toFixed(1)} t in 2010 (${pct(co2Change)})`;
-  if (kpiSub[1]) kpiSub[1].textContent = `vs ${renBase.toFixed(1)}% in 2010 (${pct(renChange)})`;
-  if (kpiSub[2]) kpiSub[2].textContent = "GDP +10% AND CO₂ −10% (2010-2022)";
-  if (kpiSub[3]) kpiSub[3].textContent = "GDP growth with rising emissions";
-
-  const noCardValue = document.querySelector(".kpi:nth-child(4) .kpi-value");
-  if (noCardValue) noCardValue.textContent = `${noCount} / ${countries.length}`;
-}
-
-function defaultLineOptions(yTitle = "") {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: "index",
-      intersect: false
-    },
-    scales: {
-      x: {
-        ticks: { color: palette.dim },
-        grid: { color: palette.border }
-      },
-      y: {
-        title: {
-          display: Boolean(yTitle),
-          text: yTitle,
-          color: palette.text
-        },
-        ticks: { color: palette.dim },
-        grid: { color: palette.border }
-      }
-    },
-    plugins: {
-      legend: {
-        labels: { color: palette.text, usePointStyle: true, boxWidth: 8 }
-      },
-      tooltip: {
-        backgroundColor: "#111520",
-        titleColor: palette.text,
-        bodyColor: palette.text,
-        borderColor: palette.border,
-        borderWidth: 1
-      }
-    }
-  };
-}
-
-function defaultScatterOptions(xTitle, yTitle) {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        title: { display: true, text: xTitle, color: palette.text },
-        ticks: { color: palette.dim },
-        grid: { color: palette.border }
-      },
-      y: {
-        title: { display: true, text: yTitle, color: palette.text },
-        ticks: { color: palette.dim },
-        grid: { color: palette.border }
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "#111520",
-        titleColor: palette.text,
-        bodyColor: palette.text,
-        borderColor: palette.border,
-        borderWidth: 1,
-        callbacks: {
-          label: context => {
-            const raw = context.raw || {};
-            const country = raw.country ? raw.country + ": " : "";
-            return `${country}${xTitle} ${Number(raw.x).toLocaleString()}, ${yTitle} ${Number(raw.y).toFixed(1)}`;
-          }
-        }
-      }
-    }
-  };
-}
-
-function buildDonut() {
+function donutChart(){
+  const wrap = clearChart('donutChart'); if(!wrap) return;
+  const svg = makeSvg(wrap, 300);
   const counts = {};
-  DATA.countries.forEach(country => {
-    counts[country.s] = (counts[country.s] || 0) + 1;
+  DATA.countries.forEach(c => counts[c.s] = (counts[c.s] || 0) + 1);
+  const entries = Object.entries(counts);
+  const total = entries.reduce((a,b)=>a+b[1],0);
+  const cx=250, cy=145, r=95, sw=34;
+  let current = -Math.PI/2;
+  entries.forEach(([label, value]) => {
+    const angle = (value/total) * Math.PI * 2;
+    const end = current + angle;
+    const x1 = cx + r*Math.cos(current), y1 = cy + r*Math.sin(current);
+    const x2 = cx + r*Math.cos(end), y2 = cy + r*Math.sin(end);
+    const large = angle > Math.PI ? 1 : 0;
+    const path = 'M '+x1+' '+y1+' A '+r+' '+r+' 0 '+large+' 1 '+x2+' '+y2;
+    const p = el(svg,'path',{d:path, fill:'none', stroke:statusColor(label), 'stroke-width':sw, 'stroke-linecap':'butt'});
+    const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+    title.textContent = label + ': ' + value;
+    p.appendChild(title);
+    current = end;
   });
-
-  destroyChart("donut");
-  charts.donut = new Chart($("donutChart"), {
-    type: "doughnut",
-    data: {
-      labels: Object.keys(counts),
-      datasets: [{
-        data: Object.values(counts),
-        backgroundColor: Object.keys(counts).map(statusColor),
-        borderColor: "#13161d",
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "62%",
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: { color: palette.text, usePointStyle: true, boxWidth: 8 }
-        },
-        tooltip: {
-          backgroundColor: "#111520",
-          titleColor: palette.text,
-          bodyColor: palette.text,
-          borderColor: palette.border,
-          borderWidth: 1
-        }
-      }
-    }
+  text(svg,cx,cy-4,String(total),28,palette.text,'middle');
+  text(svg,cx,cy+18,'countries',12,palette.dim,'middle');
+  let y = 65;
+  entries.forEach(([label,value]) => {
+    el(svg,'rect',{x:470,y:y-10,width:12,height:12,rx:3,fill:statusColor(label)});
+    text(svg,490,y,label + ' (' + value + ')',12,palette.text,'start');
+    y += 28;
   });
 }
-
-function buildGlobalCo2() {
-  const years = DATA.countries[0].yr;
-  const avg = years.map((_, i) => {
-    const sum = DATA.countries.reduce((acc, c) => acc + c.co2[i], 0);
-    return +(sum / DATA.countries.length).toFixed(2);
-  });
-
-  destroyChart("globalCo2");
-  charts.globalCo2 = new Chart($("globalCo2Chart"), {
-    type: "line",
-    data: {
-      labels: years,
-      datasets: [{
-        label: "Average CO₂/capita",
-        data: avg,
-        borderColor: palette.accent,
-        backgroundColor: "rgba(79,142,247,.12)",
-        fill: true,
-        tension: 0.3,
-        pointRadius: 2
-      }]
-    },
-    options: defaultLineOptions("Tonnes per person")
-  });
-}
-
-function initTrendSelect() {
-  const select = $("trendSelect");
-  if (!select) return;
-
-  select.innerHTML = "";
-  DATA.countries
-    .map(c => c.n)
-    .sort((a, b) => a.localeCompare(b))
-    .forEach(name => {
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = name;
-      select.appendChild(option);
-    });
-
-  ["Denmark", "Germany", "Sweden"].forEach(name => {
-    const option = [...select.options].find(o => o.value === name);
-    if (option) option.selected = true;
+function scatterChart(id, points, xTitle, yTitle, bubble){
+  const wrap = clearChart(id); if(!wrap) return;
+  const H = id === 'scatterChart' ? 420 : 300;
+  const svg = makeSvg(wrap, H);
+  const m = {l:65, r:25, t:20, b:48};
+  const w = 900 - m.l - m.r, h = H - m.t - m.b;
+  let xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const padX = (maxX-minX)*0.08 || 1, padY = (maxY-minY)*0.08 || 1;
+  minX -= padX; maxX += padX; minY -= padY; maxY += padY;
+  const x = v => m.l + ((v-minX)/(maxX-minX))*w;
+  const y = v => m.t + h - ((v-minY)/(maxY-minY))*h;
+  drawGrid(svg, m, w, h, 4);
+  text(svg, m.l+w/2, H-12, xTitle, 11, palette.dim, 'middle');
+  text(svg, 12, m.t+h/2, yTitle, 11, palette.dim, 'middle').setAttribute('transform','rotate(-90 12 '+(m.t+h/2)+')');
+  for(let i=0;i<=4;i++){
+    text(svg, m.l + (w/4)*i, m.t+h+22, Math.round(minX + ((maxX-minX)/4)*i).toLocaleString(), 10, palette.dim, 'middle');
+    text(svg, 58, m.t + h - (h/4)*i + 4, (minY + ((maxY-minY)/4)*i).toFixed(1), 10, palette.dim, 'end');
+  }
+  points.forEach(p => {
+    const c = el(svg,'circle',{cx:x(p.x), cy:y(p.y), r:bubble ? p.r : 5, fill:statusColor(p.status), opacity:.86, stroke:'#13161d', 'stroke-width':1});
+    const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+    title.textContent = p.country + ': ' + xTitle + ' ' + Number(p.x).toLocaleString() + ', ' + yTitle + ' ' + Number(p.y).toFixed(1);
+    c.appendChild(title);
   });
 }
-
-function setMetric(metric, btn) {
-  currentMetric = metric;
-
-  document.querySelectorAll("#trends .btn").forEach(button => {
-    if (button.id === "btn-co2" || button.id === "btn-ren" || button.id === "btn-gdp") {
-      button.classList.remove("active");
-    }
-  });
-
-  if (btn) btn.classList.add("active");
-  updateTrends();
-}
-
-function addPreset() {
-  const select = $("trendSelect");
-  if (!select) return;
-
-  [...select.options].forEach(option => option.selected = false);
-  ["Denmark", "Germany", "Sweden", "United Kingdom", "France"].forEach(name => {
-    const option = [...select.options].find(o => o.value === name);
-    if (option) option.selected = true;
-  });
-
-  updateTrends();
-}
-
-function updateTrends() {
-  const select = $("trendSelect");
-  if (!select) return;
-
-  let selected = [...select.selectedOptions].map(option => option.value);
-  if (selected.length === 0) selected = ["Denmark", "Germany", "Sweden"];
-
-  const countries = DATA.countries.filter(country => selected.includes(country.n));
-  const years = DATA.countries[0].yr;
-
-  const metricMap = {
-    co2: { field: "co2", title: "CO₂ per Capita Trends", yTitle: "Tonnes per person" },
-    ren: { field: "ren", title: "Renewable Energy Share Trends", yTitle: "% of energy consumption" },
-    gdp: { field: "gdp", title: "GDP per Capita Trends", yTitle: "GDP per capita" }
+function updateKpis(){
+  const countries = DATA.countries, s = DATA.summary;
+  const latestYear = s.latest_year || latest(countries[0].yr), baseYear = 2010;
+  const avg = (field, year) => {
+    const vals = countries.map(c => valueAtYear(c, field, year)).filter(v => v !== null);
+    return vals.reduce((a,b)=>a+b,0) / vals.length;
   };
-
-  const metric = metricMap[currentMetric];
-  $("trendTitle").textContent = metric.title;
-
-  destroyChart("trend");
-  charts.trend = new Chart($("trendChart"), {
-    type: "line",
-    data: {
-      labels: years,
-      datasets: countries.map((country, i) => ({
-        label: country.n,
-        data: country[metric.field],
-        borderColor: chartColor(i),
-        tension: 0.25,
-        pointRadius: 2
-      }))
-    },
-    options: defaultLineOptions(metric.yTitle)
-  });
+  const co2Latest = s.global_avg_co2 || avg('co2', latestYear);
+  const renLatest = s.global_avg_renewables || avg('ren', latestYear);
+  const co2Base = avg('co2', baseYear), renBase = avg('ren', baseYear);
+  $('kpi-co2').textContent = co2Latest.toFixed(1) + ' t';
+  $('kpi-ren').textContent = renLatest.toFixed(1) + '%';
+  $('kpi-decouple').textContent = DATA.countries.filter(c=>c.s.includes('Strong')).length + ' / ' + countries.length;
+  const subs = document.querySelectorAll('.kpi-sub');
+  if(subs[0]) subs[0].textContent = 'vs ' + co2Base.toFixed(1) + ' t in 2010 (' + pct(((co2Latest-co2Base)/co2Base)*100) + ')';
+  if(subs[1]) subs[1].textContent = 'vs ' + renBase.toFixed(1) + '% in 2010 (' + pct(((renLatest-renBase)/renBase)*100) + ')';
+  const noVal = document.querySelector('.kpi:nth-child(4) .kpi-value');
+  if(noVal) noVal.textContent = DATA.countries.filter(c=>c.s.includes('No')).length + ' / ' + countries.length;
 }
-
-function buildRenewableChart() {
+function buildGlobalCo2(){
   const years = DATA.countries[0].yr;
-  const leaders = [...DATA.countries]
-    .sort((a, b) => latest(b.ren) - latest(a.ren))
-    .slice(0, 6);
-
-  destroyChart("ren");
-  charts.ren = new Chart($("renChart"), {
-    type: "line",
-    data: {
-      labels: years,
-      datasets: leaders.map((country, i) => ({
-        label: country.n,
-        data: country.ren,
-        borderColor: chartColor(i),
-        tension: 0.25,
-        pointRadius: 2
-      }))
-    },
-    options: defaultLineOptions("% renewable")
+  const avg = years.map((_,i)=> +(DATA.countries.reduce((a,c)=>a+c.co2[i],0)/DATA.countries.length).toFixed(2));
+  lineChart('globalCo2Chart', years, [{name:'Average CO₂/capita', data:avg, color:palette.accent}], 'Tonnes per person');
+}
+function initTrendSelect(){
+  const select = $('trendSelect'); if(!select) return;
+  select.innerHTML = '';
+  DATA.countries.map(c=>c.n).sort().forEach(name => {
+    const o = document.createElement('option'); o.value = name; o.textContent = name; select.appendChild(o);
+  });
+  ['Denmark','Germany','Sweden'].forEach(name => { const o = [...select.options].find(x=>x.value===name); if(o) o.selected = true; });
+}
+function setMetric(metric, btn){
+  currentMetric = metric;
+  document.querySelectorAll('#trends .btn').forEach(b => { if(b.id) b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  updateTrends();
+}
+function addPreset(){
+  const select = $('trendSelect'); if(!select) return;
+  [...select.options].forEach(o => o.selected = false);
+  ['Denmark','Germany','Sweden','United Kingdom','France'].forEach(name => { const o = [...select.options].find(x=>x.value===name); if(o) o.selected = true; });
+  updateTrends();
+}
+function updateTrends(){
+  const select = $('trendSelect'); if(!select) return;
+  let names = [...select.selectedOptions].map(o=>o.value); if(!names.length) names = ['Denmark','Germany','Sweden'];
+  const map = {co2:['co2','CO₂ per Capita Trends','Tonnes per person'], ren:['ren','Renewable Energy Share Trends','% renewable'], gdp:['gdp','GDP per Capita Trends','GDP per capita']};
+  const [field,title,yTitle] = map[currentMetric];
+  $('trendTitle').textContent = title;
+  const countries = DATA.countries.filter(c=>names.includes(c.n));
+  lineChart('trendChart', DATA.countries[0].yr, countries.map((c,i)=>({name:c.n, data:c[field], color:lineColors[i%lineColors.length]})), yTitle);
+}
+function buildRenewableChart(){
+  const leaders = [...DATA.countries].sort((a,b)=>latest(b.ren)-latest(a.ren)).slice(0,6);
+  lineChart('renChart', DATA.countries[0].yr, leaders.map((c,i)=>({name:c.n,data:c.ren,color:lineColors[i%lineColors.length]})), '% renewable');
+}
+function updateScatter(){
+  const year = Number($('yearSlider').value); $('yearLabel').textContent = year;
+  const idx = DATA.countries[0].yr.indexOf(year);
+  scatterChart('scatterChart', DATA.countries.map(c=>({x:c.gdp[idx], y:c.co2[idx], r:Math.max(4,c.ren[idx]/4), country:c.n, status:c.s})), 'GDP per capita', 'CO₂ per capita', true);
+}
+function buildRenCo2Chart(){
+  scatterChart('renCo2Chart', DATA.countries.map(c=>({x:+(latest(c.ren)-valueAtYear(c,'ren',2010)).toFixed(1), y:c.co, country:c.n, status:c.s})), 'Renewables change', 'CO₂ change %', false);
+}
+function buildDecoupleChart(){
+  scatterChart('decoupleChart', DATA.countries.map(c=>({x:c.g, y:c.co, country:c.n, status:c.s})), 'GDP change %', 'CO₂ change %', false);
+}
+function buildTable(filter){
+  filter = filter || 'all';
+  const tbody = $('countryTbody'); if(!tbody) return;
+  tbody.innerHTML = '';
+  DATA.countries.filter(c => filter === 'all' || c.s === filter).sort((a,b)=>a.n.localeCompare(b.n)).forEach(c => {
+    const tr = document.createElement('tr');
+    const co2Class = c.co < -10 ? 'neg-good' : c.co > 10 ? 'neg-bad' : 'neu';
+    const gdpClass = c.g >= 10 ? 'pos' : c.g < 0 ? 'neg-bad' : 'neu';
+    tr.innerHTML = '<td><strong>'+c.n+'</strong></td>' +
+      '<td><span class="badge '+statusClass(c.s)+'">'+c.s+'</span></td>' +
+      '<td><span class="pill '+gdpClass+'">'+pct(c.g)+'</span></td>' +
+      '<td><span class="pill '+co2Class+'">'+pct(c.co)+'</span></td>' +
+      '<td>'+latest(c.co2).toFixed(1)+' t</td>' +
+      '<td>'+latest(c.ren).toFixed(1)+'%</td>' +
+      '<td>'+c.co2[0].toFixed(1)+' → '+latest(c.co2).toFixed(1)+' t</td>';
+    tbody.appendChild(tr);
   });
 }
-
-function updateScatter() {
-  const slider = $("yearSlider");
-  if (!slider) return;
-
-  const year = Number(slider.value);
-  const yearIndex = DATA.countries[0].yr.indexOf(year);
-  $("yearLabel").textContent = year;
-
-  const points = DATA.countries.map(country => ({
-    x: country.gdp[yearIndex],
-    y: country.co2[yearIndex],
-    r: Math.max(4, country.ren[yearIndex] / 4),
-    country: country.n,
-    status: country.s
-  }));
-
-  destroyChart("scatter");
-  charts.scatter = new Chart($("scatterChart"), {
-    type: "bubble",
-    data: {
-      datasets: [{
-        label: String(year),
-        data: points,
-        backgroundColor: points.map(point => statusColor(point.status)),
-        borderColor: "#13161d",
-        borderWidth: 1
-      }]
-    },
-    options: {
-      ...defaultScatterOptions("GDP per capita", "CO₂ per capita"),
-      plugins: {
-        ...defaultScatterOptions("GDP per capita", "CO₂ per capita").plugins,
-        tooltip: {
-          backgroundColor: "#111520",
-          titleColor: palette.text,
-          bodyColor: palette.text,
-          borderColor: palette.border,
-          borderWidth: 1,
-          callbacks: {
-            label: context => {
-              const raw = context.raw;
-              return `${raw.country}: GDP ${formatMoney(raw.x)}, CO₂ ${raw.y.toFixed(1)}t, Renewable radius ${raw.r.toFixed(1)}`;
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
-function buildRenCo2Chart() {
-  const points = DATA.countries.map(country => {
-    const baseRen = valueAtYear(country, "ren", 2010);
-    return {
-      x: +(latest(country.ren) - baseRen).toFixed(1),
-      y: country.co,
-      country: country.n,
-      status: country.s
-    };
-  });
-
-  destroyChart("renCo2");
-  charts.renCo2 = new Chart($("renCo2Chart"), {
-    type: "scatter",
-    data: {
-      datasets: [{
-        label: "Countries",
-        data: points,
-        backgroundColor: points.map(point => statusColor(point.status)),
-        pointRadius: 5
-      }]
-    },
-    options: defaultScatterOptions("Renewables change, 2010-2022", "CO₂ change %")
-  });
-}
-
-function buildDecoupleChart() {
-  const points = DATA.countries.map(country => ({
-    x: country.g,
-    y: country.co,
-    country: country.n,
-    status: country.s
-  }));
-
-  destroyChart("decouple");
-  charts.decouple = new Chart($("decoupleChart"), {
-    type: "scatter",
-    data: {
-      datasets: [{
-        label: "Countries",
-        data: points,
-        backgroundColor: points.map(point => statusColor(point.status)),
-        pointRadius: 5
-      }]
-    },
-    options: defaultScatterOptions("GDP change %", "CO₂ change %")
-  });
-}
-
-function buildTable(filter = "all") {
-  const tbody = $("countryTbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  DATA.countries
-    .filter(country => filter === "all" || country.s === filter)
-    .sort((a, b) => {
-      if (filter === "all") return a.n.localeCompare(b.n);
-      return a.co - b.co;
-    })
-    .forEach(country => {
-      const tr = document.createElement("tr");
-      const co2Class = country.co < -10 ? "neg-good" : country.co > 10 ? "neg-bad" : "neu";
-      const gdpClass = country.g >= 10 ? "pos" : country.g < 0 ? "neg-bad" : "neu";
-
-      tr.innerHTML = `
-        <td><strong>${country.n}</strong></td>
-        <td><span class="badge ${statusClass(country.s)}">${country.s}</span></td>
-        <td><span class="pill ${gdpClass}">${pct(country.g)}</span></td>
-        <td><span class="pill ${co2Class}">${pct(country.co)}</span></td>
-        <td>${latest(country.co2).toFixed(1)} t</td>
-        <td>${latest(country.ren).toFixed(1)}%</td>
-        <td>${country.co2[0].toFixed(1)} → ${latest(country.co2).toFixed(1)} t</td>
-      `;
-      tbody.appendChild(tr);
-    });
-}
-
-function filterTable(filter, btn) {
-  document.querySelectorAll("#countries .btn").forEach(button => button.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+function filterTable(filter, btn){
+  document.querySelectorAll('#countries .btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
   buildTable(filter);
 }
-
-function initializeDashboard() {
-  if (typeof Chart === "undefined") {
-    showDashboardError("Chart.js did not load. Check the CDN script or internet connection.");
-    return;
-  }
-
-  updateKpis();
-  buildDonut();
-  buildGlobalCo2();
-  initTrendSelect();
-  updateTrends();
-  buildRenewableChart();
-  updateScatter();
-  buildRenCo2Chart();
-  buildDecoupleChart();
-  buildTable("all");
-  resizeVisibleCharts();
+function nav(pageId, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const page = $(pageId); if(page) page.classList.add('active'); if(btn) btn.classList.add('active');
+  if(pageId === 'trends'){ updateTrends(); buildRenewableChart(); }
+  if(pageId === 'scatter'){ updateScatter(); buildRenCo2Chart(); buildDecoupleChart(); }
+  if(pageId === 'countries'){ buildTable('all'); }
 }
+function initializeDashboard(){
+  try{
+    updateKpis(); donutChart(); buildGlobalCo2(); initTrendSelect(); updateTrends(); buildRenewableChart(); updateScatter(); buildRenCo2Chart(); buildDecoupleChart(); buildTable('all');
+  }catch(err){
+    console.error(err);
+    const overview = $('overview');
+    if(overview) overview.insertAdjacentHTML('afterbegin','<div class="chart-card" style="border-color:var(--red);color:var(--red)"><div class="chart-title">Dashboard error</div><div class="chart-sub" style="color:var(--red)">'+err.message+'</div></div>');
+  }
+}
+document.addEventListener('DOMContentLoaded', initializeDashboard);
 
-document.addEventListener("DOMContentLoaded", initializeDashboard);
 </script>
 </body>
 </html>
